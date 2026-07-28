@@ -3,13 +3,13 @@ import { ActionConfig, LovelaceCard, LovelaceCardEditor } from 'custom-card-help
 
 declare global {
   interface HTMLElementTagNameMap {
-    'floor3d-card-editor': LovelaceCardEditor;
+    'hass-3d-floorplan-editor': LovelaceCardEditor;
     'hui-error-card': LovelaceCard;
   }
 }
 
 // TODO Add your configuration elements here for type-checking
-export interface Floor3dCardConfig {
+export interface Hass3dFloorplanConfig {
   type: string;
   path: string;
   name: string;
@@ -105,17 +105,17 @@ export interface Floor3dCardConfig {
   show_error: boolean;
 }
 
-export interface EntityFloor3dCardConfig {
+export interface EntityHass3dFloorplanConfig {
   hide: any;
   entity: string;
   type3d: 'light' | 'color' | 'hide' | 'text';
   object_id: string;
   lumens: number;
-  conditions: ConditionsFloor3dCardConfig[];
+  conditions: ConditionsHass3dFloorplanConfig[];
   state: string;
 }
 
-export interface ConditionsFloor3dCardConfig {
+export interface ConditionsHass3dFloorplanConfig {
   condition: string;
   state: string;
   color: string;

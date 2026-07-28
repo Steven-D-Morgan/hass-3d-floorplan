@@ -3,7 +3,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { PropertyValues } from 'lit';
 import { HomeAssistant, LovelaceConfig } from 'custom-card-helpers';
-import { Floor3dCardConfig } from './types';
+import { Hass3dFloorplanConfig } from './types';
 
 /**
  * Performs a deep merge of objects and returns new object. Does not modify
@@ -78,8 +78,8 @@ export const getLovelace = () => {
   return null;
 }
 
-export function createConfigArray(config): Floor3dCardConfig[] {
-  const configArray: Floor3dCardConfig[] = [];
+export function createConfigArray(config): Hass3dFloorplanConfig[] {
+  const configArray: Hass3dFloorplanConfig[] = [];
   if (config.entities) {
     for (const entityConfig of config.entities) {
       if (typeof entityConfig == 'string') {
@@ -100,8 +100,8 @@ export function createConfigArray(config): Floor3dCardConfig[] {
   return configArray;
 }
 
-export function createObjectGroupConfigArray(config): Floor3dCardConfig[] {
-  const configArray: Floor3dCardConfig[] = [];
+export function createObjectGroupConfigArray(config): Hass3dFloorplanConfig[] {
+  const configArray: Hass3dFloorplanConfig[] = [];
   if (config.entities) {
     for (const entityConfig of config.entities) {
       if (entityConfig.object_id) {
@@ -139,8 +139,8 @@ export function createObjectGroupConfigArray(config): Floor3dCardConfig[] {
   return configArray;
 }
 
-export function createEditorObjectGroupConfigArray(config): Floor3dCardConfig[] {
-  const configArray: Floor3dCardConfig[] = [];
+export function createEditorObjectGroupConfigArray(config): Hass3dFloorplanConfig[] {
+  const configArray: Hass3dFloorplanConfig[] = [];
   if (config.object_groups) {
     for (const objectGroupConfig of config.object_groups) {
       if (typeof objectGroupConfig == 'string') {
@@ -157,8 +157,8 @@ export function createEditorObjectGroupConfigArray(config): Floor3dCardConfig[] 
   return configArray;
 }
 
-export function createEditorZoomConfigArray(config): Floor3dCardConfig[] {
-  const configArray: Floor3dCardConfig[] = [];
+export function createEditorZoomConfigArray(config): Hass3dFloorplanConfig[] {
+  const configArray: Hass3dFloorplanConfig[] = [];
   if (config.zoom_areas) {
     for (const objectZoomConfig of config.zoom_areas) {
       if (typeof objectZoomConfig == 'string') {
@@ -175,8 +175,8 @@ export function createEditorZoomConfigArray(config): Floor3dCardConfig[] {
   return configArray;
 }
 
-export function createEditorConfigArray(config): Floor3dCardConfig[] {
-  const configArray: Floor3dCardConfig[] = [];
+export function createEditorConfigArray(config): Hass3dFloorplanConfig[] {
+  const configArray: Hass3dFloorplanConfig[] = [];
   if (config.entities) {
     for (const entityConfig of config.entities) {
       if (typeof entityConfig == 'string') {

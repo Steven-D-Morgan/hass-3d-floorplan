@@ -1,6 +1,6 @@
 // See https://aka.ms/vscode-remote/devcontainer.json for format details.
 {
-  "name": "Floor3d Card Development",
+  "name": "HASS 3D Floorplan Development",
   "image": "ludeeus/container:monster",
   "context": "..",
   "appPort": ["5000:5000", "9123:8123"],
@@ -9,7 +9,7 @@
     "-v",
     "${env:HOME}${env:USERPROFILE}/.ssh:/tmp/.ssh",
     "--name",
-    "floor3d-card"
+    "hass-3d-floorplan"
   ],
   "extensions": [
     "github.vscode-pull-request-github",

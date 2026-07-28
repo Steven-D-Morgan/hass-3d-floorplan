@@ -45,7 +45,7 @@ const plugins = [
 
 export default [
   {
-    input: 'src/floor3d-card.ts',
+    input: 'src/hass-3d-floorplan.ts',
     output: {
       dir: 'dist',
       format: 'es',

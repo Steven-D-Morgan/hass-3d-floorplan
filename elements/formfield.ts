@@ -4,8 +4,8 @@ import { FormfieldBase } from '@material/mwc-formfield/mwc-formfield-base.js';
 import { styles as formfieldStyles } from '@material/mwc-formfield/mwc-formfield.css.js';
 import { customElement, property } from "lit/decorators.js";
 
-@customElement("floor3d-formfield")
-export class Floor3dFormField extends FormfieldBase {
+@customElement("h3d-formfield")
+export class H3dFormField extends FormfieldBase {
 
     static get styles() {
         return formfieldStyles;
@@ -14,6 +14,6 @@ export class Floor3dFormField extends FormfieldBase {
 
 declare global {
     interface HTMLElementTagNameMap {
-        "floor3d-formfield": Floor3dFormField;
+        "h3d-formfield": H3dFormField;
     }
 }

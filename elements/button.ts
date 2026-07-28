@@ -4,8 +4,8 @@ import { ButtonBase } from '@material/mwc-button/mwc-button-base.js';
 import { styles as buttonStyles } from '@material/mwc-button/styles.css.js';
 import { customElement, property } from "lit/decorators.js";
 
-@customElement("floor3d-button")
-export class Floor3dButton extends ButtonBase {
+@customElement("h3d-button")
+export class H3dButton extends ButtonBase {
 
     static get styles() {
         return buttonStyles;
@@ -14,6 +14,6 @@ export class Floor3dButton extends ButtonBase {
 
 declare global {
     interface HTMLElementTagNameMap {
-        "floor3d-button": Floor3dButton;
+        "h3d-button": H3dButton;
     }
 }

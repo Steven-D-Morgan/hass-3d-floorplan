@@ -11,7 +11,7 @@ import {
 import './editor';
 import { HassEntity } from 'home-assistant-js-websocket';
 import { createConfigArray, createObjectGroupConfigArray, getLovelace } from './helpers';
-import type { Floor3dCardConfig } from './types';
+import type { Hass3dFloorplanConfig } from './types';
 import { CARD_VERSION } from './const';
 import { localize } from './localize/localize';
 //import three.js libraries for 3D rendering
@@ -27,7 +27,7 @@ import '../elements/button';
 
 /* eslint no-console: 0 */
 console.info(
-  `%c  FLOOR3D-CARD \n%c  ${localize('common.version')} ${CARD_VERSION}    `,
+  `%c  HASS-3D-FLOORPLAN \n%c  ${localize('common.version')} ${CARD_VERSION}    `,
   'color: orange; font-weight: bold; background: black',
   'color: white; font-weight: bold; background: dimgray',
 );
@@ -35,10 +35,10 @@ console.info(
 // This puts your card into the UI card picker dialog
 (window as any).customCards = (window as any).customCards || [];
 (window as any).customCards.push({
-  type: 'floor3d-card',
-  name: 'Floor3d Card',
+  type: 'hass-3d-floorplan',
+  name: 'HASS 3D Floorplan',
   preview: true,
-  description: 'A custom card to visualize and activate entities in a live 3D model',
+  description: 'Interactive 3D floorplan card for Home Assistant',
 });
 class ModelSource {
   public static OBJ = 0;
@@ -46,8 +46,8 @@ class ModelSource {
 }
 
 // TODO Name your custom element
-@customElement('floor3d-card')
-export class Floor3dCard extends LitElement {
+@customElement('hass-3d-floorplan')
+export class Hass3dFloorplan extends LitElement {
   private _scene?: THREE.Scene;
   private _camera?: THREE.PerspectiveCamera;
   private _renderer?: THREE.WebGLRenderer;
@@ -115,9 +115,9 @@ export class Floor3dCard extends LitElement {
   private _card?: HTMLElement;
   private _content?: HTMLElement;
   private _modeltype?: ModelSource;
-  private _config!: Floor3dCardConfig;
-  private _configArray: Floor3dCardConfig[] = [];
-  private _object_ids?: Floor3dCardConfig[] = [];
+  private _config!: Hass3dFloorplanConfig;
+  private _configArray: Hass3dFloorplanConfig[] = [];
+  private _object_ids?: Hass3dFloorplanConfig[] = [];
   private _overlay: HTMLDivElement;
   private _hass?: HomeAssistant;
   private _haShadowRoot: any;
@@ -213,7 +213,7 @@ export class Floor3dCard extends LitElement {
 
   public static async getConfigElement(): Promise<LovelaceCardEditor> {
     await import('./editor');
-    return document.createElement('floor3d-card-editor');
+    return document.createElement('hass-3d-floorplan-editor');
   }
 
   public static getStubConfig(hass: HomeAssistant, entities: string[], entitiesFallback: string[]): object {
@@ -298,7 +298,7 @@ export class Floor3dCard extends LitElement {
     let path = url.pathname.replace(asset, '');
 
     if (path.includes('hacsfiles')) {
-      path = '/local/community/floor3d-card/';
+      path = '/local/community/hass-3d-floorplan/';
     }
 
     const conf = {
@@ -389,12 +389,12 @@ export class Floor3dCard extends LitElement {
   // TODO Add any properities that should cause your element to re-render here
   // https://lit-element.polymer-project.org/guide/properties
   //@property({ attribute: false }) public hass!: HomeAssistant;
-  @state() private config!: Floor3dCardConfig;
+  @state() private config!: Hass3dFloorplanConfig;
 
   // https://lit-element.polymer-project.org/guide/properties#accessors-custom
-  public setConfig(config: Floor3dCardConfig): void {
+  public setConfig(config: Hass3dFloorplanConfig): void {
     // TODO Check for required fields and that they are of the proper format
-    console.log('floor3d-card: Set Config Start');
+    console.log('hass-3d-floorplan: Set Config Start');
 
     if (!config) {
       throw new Error(localize('common.invalid_configuration'));
@@ -420,7 +420,7 @@ export class Floor3dCard extends LitElement {
       i += 1;
     });
 
-    console.log('floor3d-card: Set Config End');
+    console.log('hass-3d-floorplan: Set Config End');
 
     if (this._config.show_warning) {
       render(this._showWarning(localize('common.show_warning')), this._card);
@@ -836,7 +836,7 @@ export class Floor3dCard extends LitElement {
     console.log('Resize canvas end');
   }
 
-  private _statewithtemplate(entity: Floor3dCardConfig): string {
+  private _statewithtemplate(entity: Hass3dFloorplanConfig): string {
     if (this._hass.states[entity.entity]) {
       let state = this._hass.states[entity.entity].state;
 
@@ -1686,8 +1686,8 @@ export class Floor3dCard extends LitElement {
     iconArray.push(html`
       <div class="row" style="background-color:black;">
         <font color="white">
-          <floor3d-button style="opacity: 100%;" label="reset" .index=${-1} @click=${this._handleZoomClick.bind(this)}>
-          </floor3d-button>
+          <h3d-button style="opacity: 100%;" label="reset" .index=${-1} @click=${this._handleZoomClick.bind(this)}>
+          </h3d-button>
         </font>
       </div>
     `);
@@ -1697,8 +1697,8 @@ export class Floor3dCard extends LitElement {
         iconArray.push(html`
           <div class="row" style="background-color:black;">
             <font color="white">
-              <floor3d-button label=${element.name} .index=${index} @click=${this._handleZoomClick.bind(this)}>
-              </floor3d-button>
+              <h3d-button label=${element.name} .index=${index} @click=${this._handleZoomClick.bind(this)}>
+              </h3d-button>
             </font>
           </div>
         `);
@@ -1766,12 +1766,12 @@ export class Floor3dCard extends LitElement {
       buttonArray.push(html`
         <div class="row" style="background-color:black;">
           <font color="white">
-            <floor3d-button
+            <h3d-button
               style="opacity: 100%;"
               label="clear selections (${this._selectedobjects.length})"
               @click=${this._handleClearSelectionsClick.bind(this)}
             >
-            </floor3d-button>
+            </h3d-button>
           </font>
         </div>
       `);
@@ -1779,12 +1779,12 @@ export class Floor3dCard extends LitElement {
       buttonArray.push(html`
         <div class="row" style="background-color:black;">
           <font color="white">
-            <floor3d-button
+            <h3d-button
               style="opacity: 100%;"
               label="${this._selectionModeEnabled ? 'Disable Selection' : 'Enable Selection'}"
               @click=${this._handleToggleSelectionMode.bind(this)}
             >
-            </floor3d-button>
+            </h3d-button>
           </font>
         </div>
       `);
@@ -2525,7 +2525,7 @@ export class Floor3dCard extends LitElement {
     }
   }
 
-  private _createroom(entity: Floor3dCardConfig, i: number): void {
+  private _createroom(entity: Hass3dFloorplanConfig, i: number): void {
     // createroom
 
     console.log('Create Room');
@@ -2636,7 +2636,7 @@ export class Floor3dCard extends LitElement {
     return;
   }
 
-  private _updateroom(entity: Floor3dCardConfig, text: string, uom: string, i: number): void {
+  private _updateroom(entity: Hass3dFloorplanConfig, text: string, uom: string, i: number): void {
     //update sprite text and other change conditions
 
     const _roomMesh: THREE.Object3D = this._scene.getObjectByName(this._rooms[i]);
@@ -2652,7 +2652,7 @@ export class Floor3dCard extends LitElement {
     }
   }
 
-  private _updatecover(item: Floor3dCardConfig, state: string, i: number): void {
+  private _updatecover(item: Hass3dFloorplanConfig, state: string, i: number): void {
     let pane = this._scene.getObjectByName(item.cover.pane);
 
     if (this._position[i] == null) {
@@ -2671,7 +2671,7 @@ export class Floor3dCard extends LitElement {
     this._renderer.shadowMap.needsUpdate = true;
   }
 
-  private _createTextCanvas(entity: Floor3dCardConfig, text: string, uom: string): HTMLCanvasElement {
+  private _createTextCanvas(entity: Hass3dFloorplanConfig, text: string, uom: string): HTMLCanvasElement {
     const canvas = document.createElement('canvas');
 
     this._updateTextCanvas(entity, canvas, text + uom);
@@ -2679,7 +2679,7 @@ export class Floor3dCard extends LitElement {
     return canvas;
   }
 
-  private _updateTextCanvas(entity: Floor3dCardConfig, canvas: HTMLCanvasElement, text: string): void {
+  private _updateTextCanvas(entity: Hass3dFloorplanConfig, canvas: HTMLCanvasElement, text: string): void {
     //Manages the update of the text entities according to their configuration and the new text of the entity state
 
     const ctx = canvas.getContext('2d');
@@ -2806,7 +2806,7 @@ export class Floor3dCard extends LitElement {
     return '#' + rs + gs + bs;
   }
 
-  private _updatetext(entity: Floor3dCardConfig, state: string, canvas: HTMLCanvasElement, uom: string): void {
+  private _updatetext(entity: Hass3dFloorplanConfig, state: string, canvas: HTMLCanvasElement, uom: string): void {
     const _foundobject: any = this._scene.getObjectByName(entity.object_id);
 
     if (_foundobject) {
@@ -2815,7 +2815,7 @@ export class Floor3dCard extends LitElement {
     }
   }
 
-  private _updatelight(entity: Floor3dCardConfig, i: number): void {
+  private _updatelight(entity: Hass3dFloorplanConfig, i: number): void {
     // Illuminate the light object when, for the bound device, one of its attribute gets modified in HA. See set hass property
 
     this._object_ids[i].objects.forEach((element) => {
@@ -2860,7 +2860,7 @@ export class Floor3dCard extends LitElement {
     });
   }
 
-  private _manage_light_shadows(entity: Floor3dCardConfig, light: THREE.Light): void {
+  private _manage_light_shadows(entity: Hass3dFloorplanConfig, light: THREE.Light): void {
     if (this._config.shadow == 'yes') {
       if (entity.light.shadow == 'yes') {
         if (light.intensity > 0) {
@@ -2872,7 +2872,7 @@ export class Floor3dCard extends LitElement {
     }
   }
 
-  private _updatedoor(entity: Floor3dCardConfig, i: number): void {
+  private _updatedoor(entity: Hass3dFloorplanConfig, i: number): void {
     // perform action on door objects
     // console.log("Update Door Start");
 
@@ -2924,7 +2924,7 @@ export class Floor3dCard extends LitElement {
     object.position.copy(pivot);
   }
 
-  private _rotatedoorpivot(entity: Floor3dCardConfig, index: number) {
+  private _rotatedoorpivot(entity: Hass3dFloorplanConfig, index: number) {
     // console.log("Rotate Door Start");
 
     //For a swing door, rotate the objects along the configured axis and the degrees of opening
@@ -3116,7 +3116,7 @@ export class Floor3dCard extends LitElement {
     });
   }
 
-  private _updatehide(entity: Floor3dCardConfig, index: number): void {
+  private _updatehide(entity: Hass3dFloorplanConfig, index: number): void {
     // hide the object when the state is equal to the configured value
     this._object_ids[index].objects.forEach((element) => {
       //object clickable: check layers solution
@@ -3134,7 +3134,7 @@ export class Floor3dCard extends LitElement {
     this._renderer.shadowMap.needsUpdate = true;
   }
 
-  private _updateshow(entity: Floor3dCardConfig, index: number): void {
+  private _updateshow(entity: Hass3dFloorplanConfig, index: number): void {
     // hide the object when the state is equal to the configured value
     this._object_ids[index].objects.forEach((element) => {
       const _object: any = this._scene.getObjectByName(element.object_id);
@@ -3159,7 +3159,7 @@ export class Floor3dCard extends LitElement {
     //return hasConfigOrEntityChanged(this, _changedProps, false);
   }
 
-  private _rotatecalc(entity: Floor3dCardConfig, i: number) {
+  private _rotatecalc(entity: Hass3dFloorplanConfig, i: number) {
     let j = this._rotation_index.indexOf(i);
 
     //1 if the entity is on, 0 if the entity is off

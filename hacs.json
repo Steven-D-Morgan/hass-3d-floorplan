@@ -1,4 +1,5 @@
 {
-    "name": "Your HA Digital Twin floor3d-card",
-    "render_readme": true
+    "name": "HASS 3D Floorplan",
+    "render_readme": true,
+    "filename": "hass-3d-floorplan.js"
 }
