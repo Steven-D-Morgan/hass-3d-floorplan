@@ -1,8 +1,14 @@
-# HASS 3D Floorplan
+<p align="center">
+  <img src="icon.png" alt="HASS 3D Floorplan" width="180">
+</p>
 
-[![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg?style=for-the-badge)](https://github.com/hacs/integration)
+<h1 align="center">HASS 3D Floorplan</h1>
 
-Interactive 3D floorplan card for Home Assistant. Render your home as a live 3D model with entity bindings for lights, doors, covers, sensors, and more.
+<p align="center">
+  <a href="https://github.com/hacs/integration"><img src="https://img.shields.io/badge/HACS-Custom-41BDF5.svg?style=for-the-badge" alt="HACS"></a>
+</p>
+
+<p align="center">Interactive 3D floorplan card for Home Assistant.<br>Render your home as a live 3D model with entity bindings for lights, doors, covers, sensors, and more.</p>
 
 > Based on [floor3d-card](https://github.com/adizanni/floor3d-card) by Andrea Di Zanni.
 
