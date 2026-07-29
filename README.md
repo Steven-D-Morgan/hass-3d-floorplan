@@ -45,11 +45,24 @@ Model your home with all needed objects and furniture.
 At the end of your modeling, export the files in OBJ format using '3D View > Export to OBJ format ...'.
 Copy the full set of files (minimum is the .obj file and .mtl file) to a sub folder of `/config/www` in Home Assistant.
 
-Be aware that when you remove objects from the model the object IDs get reassigned. After a modification and re-export it is possible you need to redo the bindings with the new object names. The [ExportToHASS](https://github.com/adizanni/ExportToHASS) plugin for SweetHome3D can help with this.
+Be aware that when you remove objects from the model the object IDs get reassigned. After a modification and re-export it is possible you need to redo the bindings with the new object names. The ExportToHASS plugin for SweetHome3D can help with this (see below).
 
 Tips:
 - Place the upper left corner of your 2D floor model at 0,0 coordinates for correct camera behavior
 - Make objects invisible instead of removing them to preserve object IDs
+
+### ExportToHASS plugin (recommended)
+
+[ExportToHASS](https://github.com/adizanni/ExportToHASS) is a SweetHome3D plugin (by the original floor3d-card author) that exports models tailored for this card. Compared to the built-in OBJ export it:
+
+- Preserves object IDs across re-exports, so your entity bindings don't break when the model changes
+- Exports level/floor information so the card's level buttons work
+- Sets up door/window objects (hinge, pane) for the `door` binding type
+- Handles the transparent-slab logic used by the `sky` feature
+
+**Download:** [ExportToHASSPlugin.sh3p](https://github.com/adizanni/ExportToHASS/releases/latest/download/ExportToHASSPlugin.sh3p)
+
+**Install:** double-click the downloaded `.sh3p` file, or in SweetHome3D go to **Tools > Import plugin** and select it. The plugin is experimental — use at your own risk.
 
 When you are finished, configure a new card (either in panel mode or regular) with the following options.
 
