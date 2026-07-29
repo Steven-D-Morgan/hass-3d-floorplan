@@ -11,10 +11,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
       - name: Build the file
         run: |
           npm install
-          npm run build
+          npm run rollup
 
       - name: Upload js to release
         uses: svenstaro/upload-release-action@v2
