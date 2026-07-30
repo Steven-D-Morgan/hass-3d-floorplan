@@ -2,6 +2,7 @@
 
 | Version | Date       | Description                                                                                                   |
 |---------|------------|---------------------------------------------------------------------------------------------------------------|
+| 2.2.0   | 2026-07-30 | Added spin-up / coast-down easing to the `rotate` binding via a new `ramp` option (default 1.5s, set 0 for instant). Rotating objects now accelerate and slow down naturally instead of snapping between speeds. |
 | 2.1.2   | 2026-07-28 | Bumped GitHub Actions (checkout, setup-node) to v5 to clear Node 20 deprecation warnings. |
 | 2.1.1   | 2026-07-28 | Restored Norwegian (Bokmål) language support with typo fix and added missing show_error string. Pinned CI workflows to Node 18 to fix tslib incompatibility with Node 24. Skipped lint step in release builds. |
 | 2.1.0   | 2026-07-28 | Added language support for German, Spanish, and Russian. Removed Norwegian locale from original fork.         |

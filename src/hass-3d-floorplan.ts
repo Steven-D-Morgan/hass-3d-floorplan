@@ -92,6 +92,8 @@ export class Hass3dFloorplan extends LitElement {
   private _axis_to_rotate: string[];
   private _round_per_seconds: number[];
   private _rotation_state: number[];
+  private _rotation_current_speed: number[];
+  private _rotation_ramp: number[];
   private _rotation_index: number[];
   private _animated_transitions: any[];
   private _clock?: THREE.Clock;
@@ -2041,6 +2043,8 @@ export class Hass3dFloorplan extends LitElement {
         this._round_per_seconds = [];
         this._axis_to_rotate = [];
         this._rotation_state = [];
+        this._rotation_current_speed = [];
+        this._rotation_ramp = [];
         this._rotation_index = [];
         this._animated_transitions = [];
         this._pivot = [];
@@ -2065,6 +2069,9 @@ export class Hass3dFloorplan extends LitElement {
                 this._round_per_seconds.push(entity.rotate.round_per_second);
                 this._axis_to_rotate.push(entity.rotate.axis);
                 this._rotation_state.push(0);
+                this._rotation_current_speed.push(0);
+                // Ramp (seconds) controls spin-up / coast-down easing. Default 1.5s; set 0 for instant.
+                this._rotation_ramp.push(entity.rotate.ramp !== undefined ? Number(entity.rotate.ramp) : 1.5);
                 this._rotation_index.push(i);
                 let bbox: THREE.Box3;
                 let hinge: any;
@@ -3184,8 +3191,13 @@ export class Hass3dFloorplan extends LitElement {
   }
 
   private _needsAnimationLoop() {
-    // Check rotations and Tween.getAll()
-    return this._rotation_state.some((item) => item !== 0) || TWEEN.getAll().length > 0;
+    // Keep animating while any rotation has a nonzero target OR is still easing toward zero
+    // (spin-up / coast-down), and while any Tween is running.
+    return (
+      this._rotation_state.some((item) => item !== 0) ||
+      this._rotation_current_speed.some((item) => item !== 0) ||
+      TWEEN.getAll().length > 0
+    );
   }
 
   // If every rotating entity and Tween is stopped, disable animation
@@ -3206,21 +3218,31 @@ export class Hass3dFloorplan extends LitElement {
     const clockDelta = this._clock.getDelta();
     let rotateBy = clockDelta * Math.PI * 2;
 
-    this._rotation_state.forEach((state, index) => {
-      if (state == 0) return;
+    this._rotation_state.forEach((target, index) => {
+      // Ease the current speed toward the target speed for spin-up / coast-down.
+      // tau is the easing time constant (seconds); tau <= 0 means snap instantly.
+      const tau = this._rotation_ramp[index];
+      const factor = tau > 0 ? 1 - Math.exp(-clockDelta / tau) : 1;
+      let current = this._rotation_current_speed[index];
+      current += (target - current) * factor;
+      // Snap to the target once close enough so the loop can eventually stop.
+      if (Math.abs(target - current) < 0.001) current = target;
+      this._rotation_current_speed[index] = current;
+
+      if (current == 0) return;
 
       this._object_ids[this._rotation_index[index]].objects.forEach((element) => {
         let _obj = this._scene.getObjectByName(element.object_id);
         if (_obj) {
           switch (this._axis_to_rotate[index]) {
             case 'x':
-              _obj.rotation.x += this._round_per_seconds[index] * this._rotation_state[index] * rotateBy;
+              _obj.rotation.x += this._round_per_seconds[index] * current * rotateBy;
               break;
             case 'y':
-              _obj.rotation.y += this._round_per_seconds[index] * this._rotation_state[index] * rotateBy;
+              _obj.rotation.y += this._round_per_seconds[index] * current * rotateBy;
               break;
             case 'z':
-              _obj.rotation.z += this._round_per_seconds[index] * this._rotation_state[index] * rotateBy;
+              _obj.rotation.z += this._round_per_seconds[index] * current * rotateBy;
               break;
           }
         }
@@ -3231,6 +3253,9 @@ export class Hass3dFloorplan extends LitElement {
 
     this._renderer.shadowMap.needsUpdate = true;
     this._renderer.render(this._scene, this._camera);
+
+    // Once every rotation has coasted to a stop (and no tweens remain), shut the loop down.
+    this._startOrStopAnimationLoop();
   }
 
   // https://lit-element.polymer-project.org/guide/templates

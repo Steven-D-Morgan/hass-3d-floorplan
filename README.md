@@ -341,8 +341,27 @@ entities:
     object_id: <object or group>
     rotate:
       axis: <'x', 'y', or 'z'>
-      round_per_seconds: <1-4, negative for reverse>
+      round_per_second: <1-4, negative for reverse>
       hinge: <pivot object_id>
+      ramp: <seconds to spin up / coast down; default 1.5, set 0 for instant>
+```
+
+The object spins while the bound entity is `on` and stops when `off`. If the entity exposes a `percentage` attribute (e.g. a `fan`), the spin speed scales with it — a fan at 50% spins at half of `round_per_second`. A `direction` attribute of `reverse` flips the spin direction.
+
+`ramp` controls the spin-up and coast-down easing so the object accelerates and slows down naturally instead of snapping between speeds. It defaults to `1.5` seconds; set it to `0` for the old instant behavior.
+
+Example — a ceiling fan:
+
+```yaml
+entities:
+  - entity: fan.living_room
+    type3d: rotate
+    object_id: <fan blades object or group>
+    rotate:
+      axis: y
+      round_per_second: 3
+      hinge: <center hub object>
+      ramp: 2
 ```
 
 ## Quick Start Example
