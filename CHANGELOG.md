@@ -2,6 +2,7 @@
 
 | Version | Date       | Description                                                                                                   |
 |---------|------------|---------------------------------------------------------------------------------------------------------------|
+| 2.3.0   | 2026-07-31 | Mobile load-time improvements: support for Draco and meshopt compressed .glb models (5-10x smaller downloads, new `draco_decoder_path` option), on-device model caching with background revalidation for near-instant repeat loads (new `model_cache` option, HTTPS only), rendering pixel-ratio cap of 2 on high-DPR phones (new `max_pixel_ratio` option), and `high-performance` WebGL context hint. |
 | 2.2.0   | 2026-07-30 | Added spin-up / coast-down easing to the `rotate` binding via a new `ramp` option (default 1.5s, set 0 for instant). Rotating objects now accelerate and slow down naturally instead of snapping between speeds. |
 | 2.1.2   | 2026-07-28 | Bumped GitHub Actions (checkout, setup-node) to v5 to clear Node 20 deprecation warnings. |
 | 2.1.1   | 2026-07-28 | Restored Norwegian (Bokmål) language support with typo fix and added missing show_error string. Pinned CI workflows to Node 18 to fix tslib incompatibility with Node 24. Skipped lint step in release builds. |

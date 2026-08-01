@@ -108,6 +108,9 @@ The GLB file is self-contained so you only need that one file to load the model.
 | sky              | string | no           | 'yes' to show sky, ground, and sun based on sun.sun entity                                                                                                                 |
 | north            | string | see desc     | north direction on x-z plane, e.g. `{x: 0, z: 1}` (default). Used with sky                                                                                               |
 | overlay\_<style> | string | various      | customize overlay panel appearance (colors, fonts, etc.)                                                                                                                   |
+| max_pixel_ratio  | float  | 2            | cap on the device pixel ratio used for rendering. Phones report 3+, which is expensive for little visual gain; lower to 1 or 1.5 for faster rendering on weak devices      |
+| model_cache      | string | 'yes'        | cache the model file on the device for instant repeat loads (needs HTTPS; updates are picked up in the background — see [Mobile performance](#mobile-performance))         |
+| draco_decoder_path | string | see desc   | URL of the Draco decoder for Draco-compressed .glb files. Default: `https://www.gstatic.com/draco/versioned/decoders/1.5.6/`. Self-host and set this for offline setups   |
 
 **Note on sky:** When using sky, the sun going above the ceiling can cause strange illumination. Place a transparent slab object (transparent box) on top of your floor named `transparent_slab*` to block sunlight from above. You can also activate the ceiling in SweetHome3D.
 
@@ -392,6 +395,29 @@ globalLightPower: 0.4
 ## Working with levels
 
 If your SweetHome3D model has levels and you use the [ExportToHASS](https://github.com/adizanni/ExportToHASS/releases/latest/download/ExportToHASSPlugin.sh3p) plugin, level buttons appear at the top left of the 3D canvas. Click a level to show only that floor, or click "all" to show the full model.
+
+## Mobile performance
+
+Most of the time you wait when opening the card on a phone is spent downloading the model file. Three things cut this down:
+
+### 1. Compress your .glb model (biggest win)
+
+The card supports **Draco** and **meshopt** compressed GLB files, which are typically 5–10x smaller than uncompressed exports:
+
+- **Draco** (recommended — preserves object names, so entity bindings keep working):
+  - Blender: enable the *Compression* checkbox in the glTF export dialog, or
+  - command line: `npx gltf-pipeline -i home.glb -o home-draco.glb -d`
+- **meshopt**: `npx gltfpack -i home.glb -o home-opt.glb -cc -kn` — **the `-kn` flag is required**, otherwise gltfpack renames objects and your `object_id` bindings break. Verify your bindings still work after packing.
+
+Decompression is fast, and the Draco decoder itself is only downloaded when the model actually uses Draco. By default it comes from Google's CDN; for fully offline setups, copy the [decoder files](https://github.com/mrdoob/three.js/tree/r130/examples/js/libs/draco/gltf) (`draco_wasm_wrapper.js`, `draco_decoder.wasm`) to your `www` folder and set `draco_decoder_path: /local/draco/`.
+
+### 2. Model caching (automatic)
+
+When Home Assistant is served over HTTPS (e.g. via the companion app with a Nabu Casa or reverse-proxy URL), the card stores the model on the device and repeat loads are near-instant. It re-checks the server in the background and picks up a changed model on the next dashboard load. If you are actively iterating on your model and want changes immediately, either set `model_cache: no` or bump a version query on the file name (`objfile: home.glb?v=2`), which also busts the cache.
+
+### 3. Rendering resolution cap
+
+The card now renders at a maximum device pixel ratio of 2 by default (phones report 3+, which more than doubles the pixels rendered for no visible difference on a floorplan). Set `max_pixel_ratio: 1.5` or `1` if an older device still struggles, or raise it if you want maximum sharpness on a desktop monitor.
 
 ## GPU Performance Tips
 

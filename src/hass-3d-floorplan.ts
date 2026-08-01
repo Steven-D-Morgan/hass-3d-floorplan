@@ -21,6 +21,8 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
 import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader';
 import { GLTFLoader, GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader';
+import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import { Sky } from 'three/examples/jsm/objects/Sky';
 import { Object3D } from 'three';
 import '../elements/button';
@@ -133,6 +135,7 @@ export class Hass3dFloorplan extends LitElement {
   _helper: THREE.DirectionalLightHelper;
   private _modelready: boolean;
   private _maxtextureimage: number;
+  private _dracoLoader?: DRACOLoader;
 
   constructor() {
     super();
@@ -1321,7 +1324,12 @@ export class Hass3dFloorplan extends LitElement {
 
     // create and initialize renderer
 
-    this._renderer = new THREE.WebGLRenderer({ antialias: true, logarithmicDepthBuffer: true, alpha: true });
+    this._renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      logarithmicDepthBuffer: true,
+      alpha: true,
+      powerPreference: 'high-performance',
+    });
     this._maxtextureimage = this._renderer.capabilities.maxTextures;
     console.log('Max Texture Image Units: ' + this._maxtextureimage);
     console.log('Max Texture Image Units: number of lights casting shadow should be less than the above number');
@@ -1392,15 +1400,22 @@ export class Hass3dFloorplan extends LitElement {
       } else if (fileExt == 'glb') {
         //glb format
         const loader = new GLTFLoader().setPath(path);
-        loader.load(
-          this._config.objfile,
-          this._onLoadedGLTF3DModel.bind(this),
-          this._onloadedGLTF3DProgress.bind(this),
-          function (error: ErrorEvent): void {
-            throw new Error(error.error);
-          },
+
+        // Compressed glb support: Draco (Blender export) and meshopt (gltfpack).
+        // The Draco decoder itself is only downloaded if the model actually uses it.
+        if (!this._dracoLoader) {
+          this._dracoLoader = new DRACOLoader();
+        }
+        this._dracoLoader.setDecoderPath(
+          this._config.draco_decoder_path
+            ? this._config.draco_decoder_path
+            : 'https://www.gstatic.com/draco/versioned/decoders/1.5.6/',
         );
+        loader.setDRACOLoader(this._dracoLoader);
+        loader.setMeshoptDecoder(MeshoptDecoder);
+
         this._modeltype = ModelSource.GLB;
+        this._loadGLBModel(loader, path);
       }
     } else {
       throw new Error('Path is empty');
@@ -1412,8 +1427,140 @@ export class Hass3dFloorplan extends LitElement {
     this._showError(event.error);
   }
 
-  private _onloadedGLTF3DProgress(_progress: ProgressEvent): void {
-    this._content.innerText = 'Loading: ' + Math.round((_progress.loaded / _progress.total) * 100) + '%';
+  private async _loadGLBModel(loader: GLTFLoader, path: string): Promise<void> {
+    try {
+      const url = path + this._config.objfile;
+      const buffer = await this._fetchModelBuffer(url);
+
+      if (this._content) {
+        this._content.innerText = 'Loading: 100%';
+      }
+
+      loader.parse(buffer, path, this._onLoadedGLTF3DModel.bind(this), (error: ErrorEvent): void => {
+        console.error('hass-3d-floorplan: failed to parse model', error);
+        if (this._content) {
+          this._content.innerText = 'Error parsing model: check the console log';
+        }
+      });
+    } catch (error) {
+      console.error('hass-3d-floorplan: failed to load model', error);
+      if (this._content) {
+        this._content.innerText = 'Error loading model: check the console log';
+      }
+    }
+  }
+
+  private async _fetchModelBuffer(url: string): Promise<ArrayBuffer> {
+    // Persistent cache (when available) makes repeat loads instant on mobile:
+    // serve cached bytes immediately, revalidate against the server in the background.
+    // Requires a secure context (HTTPS or localhost); silently falls back otherwise.
+    const cacheEnabled = this._config.model_cache != 'no' && typeof caches !== 'undefined';
+
+    if (cacheEnabled) {
+      try {
+        const cache = await caches.open('hass-3d-floorplan-models');
+        const cached = await cache.match(url);
+
+        if (cached) {
+          console.log('hass-3d-floorplan: model loaded from local cache');
+          this._revalidateModelCache(cache, url, cached);
+          return await cached.arrayBuffer();
+        }
+
+        const fetched = await this._fetchWithProgress(url);
+        try {
+          await cache.put(url, new Response(fetched.buffer, { headers: fetched.headers }));
+        } catch (cacheError) {
+          console.warn('hass-3d-floorplan: unable to cache model', cacheError);
+        }
+        return fetched.buffer;
+      } catch (cacheError) {
+        console.warn('hass-3d-floorplan: model cache unavailable', cacheError);
+      }
+    }
+
+    return (await this._fetchWithProgress(url)).buffer;
+  }
+
+  private async _fetchWithProgress(url: string): Promise<{ buffer: ArrayBuffer; headers: Headers }> {
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      throw new Error('HTTP ' + response.status + ' while fetching ' + url);
+    }
+
+    const headers = new Headers();
+    ['content-type', 'last-modified', 'etag'].forEach((name) => {
+      const value = response.headers.get(name);
+      if (value) {
+        headers.set(name, value);
+      }
+    });
+
+    if (!response.body) {
+      return { buffer: await response.arrayBuffer(), headers };
+    }
+
+    const total = Number(response.headers.get('content-length')) || 0;
+    const reader = response.body.getReader();
+    const chunks: Uint8Array[] = [];
+    let received = 0;
+
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) {
+        break;
+      }
+      chunks.push(value);
+      received += value.length;
+      if (this._content) {
+        this._content.innerText = total
+          ? 'Loading: ' + Math.round((received / total) * 100) + '%'
+          : 'Loading: ' + (received / (1024 * 1024)).toFixed(1) + ' MB';
+      }
+    }
+
+    const buffer = new Uint8Array(received);
+    let offset = 0;
+    chunks.forEach((chunk) => {
+      buffer.set(chunk, offset);
+      offset += chunk.length;
+    });
+
+    return { buffer: buffer.buffer, headers };
+  }
+
+  private async _revalidateModelCache(cache: Cache, url: string, cached: Response): Promise<void> {
+    try {
+      const etag = cached.headers.get('etag');
+      const lastModified = cached.headers.get('last-modified');
+
+      // Without validators every revalidation would re-download the full file,
+      // burning mobile data in the background. Users can bust the cache by
+      // changing the objfile query string (e.g. home.glb?v=2).
+      if (!etag && !lastModified) {
+        return;
+      }
+
+      const headers: Record<string, string> = {};
+      if (etag) {
+        headers['If-None-Match'] = etag;
+      }
+      if (lastModified) {
+        headers['If-Modified-Since'] = lastModified;
+      }
+
+      const response = await fetch(url, { headers, cache: 'no-cache' });
+
+      if (response.ok && response.status != 304) {
+        await cache.put(url, response);
+        console.log(
+          'hass-3d-floorplan: model file changed on the server; the new version will show on the next dashboard load',
+        );
+      }
+    } catch (error) {
+      // Offline or transient network failure: keep serving the cached copy.
+    }
   }
 
   private _onLoadMaterialProgress(_progress: ProgressEvent): void {
@@ -1494,7 +1641,13 @@ export class Hass3dFloorplan extends LitElement {
 
       this._controls = new OrbitControls(this._camera, this._renderer.domElement);
 
-      this._renderer.setPixelRatio(window.devicePixelRatio);
+      // Cap the pixel ratio: phones report devicePixelRatio of 3+, which makes the
+      // canvas rasterize up to 9x the pixels of the CSS area for little visual gain.
+      let maxPixelRatio = Number(this._config.max_pixel_ratio);
+      if (!Number.isFinite(maxPixelRatio) || maxPixelRatio <= 0) {
+        maxPixelRatio = 2;
+      }
+      this._renderer.setPixelRatio(Math.min(window.devicePixelRatio, maxPixelRatio));
 
       this._controls.maxPolarAngle = (0.85 * Math.PI) / 2;
       this._controls.addEventListener('change', this._changeListener);

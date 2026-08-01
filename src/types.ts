@@ -103,6 +103,9 @@ export interface Hass3dFloorplanConfig {
   color: string;
   show_warning: boolean;
   show_error: boolean;
+  max_pixel_ratio: string;
+  draco_decoder_path: string;
+  model_cache: string;
 }
 
 export interface EntityHass3dFloorplanConfig {
