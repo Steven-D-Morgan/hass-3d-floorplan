@@ -107,7 +107,9 @@ export class Hass3dFloorplan extends LitElement {
   private _firstcall?: boolean;
   private _resizeTimeout?: number;
   private _resizeObserver: ResizeObserver;
-  private _zIndexInterval: number;
+  private _visibilityObserver?: IntersectionObserver;
+  private _isOffscreen: boolean;
+  private _documentVisibilityListener: EventListener;
   private _performActionListener: EventListener;
   private _clickStart?: number;
   private _mousedownEventListener: EventListener;
@@ -124,7 +126,6 @@ export class Hass3dFloorplan extends LitElement {
   private _object_ids?: Hass3dFloorplanConfig[] = [];
   private _overlay: HTMLDivElement;
   private _hass?: HomeAssistant;
-  private _haShadowRoot: any;
   private _position: number[];
   private _card_id: string;
   private _ambient_light: any;
@@ -173,7 +174,8 @@ export class Hass3dFloorplan extends LitElement {
       }
       this._render();
     };
-    this._haShadowRoot = document.querySelector('home-assistant').shadowRoot;
+    this._isOffscreen = false;
+    this._documentVisibilityListener = () => this._updateVisibilityState();
     this._eval = eval;
     this._card_id = 'ha-card-1';
 
@@ -187,9 +189,7 @@ export class Hass3dFloorplan extends LitElement {
       if (this._ispanel() || this._issidebar()) {
         this._resizeObserver.observe(this._card);
       }
-      this._zIndexInterval = window.setInterval(() => {
-        this._zIndexChecker();
-      }, 250);
+      this._startVisibilityWatch();
 
       if (this._to_animate) {
         this._clock = new THREE.Clock();
@@ -206,7 +206,7 @@ export class Hass3dFloorplan extends LitElement {
     super.disconnectedCallback();
 
     this._resizeObserver.disconnect();
-    window.clearInterval(this._zIndexInterval);
+    this._stopVisibilityWatch();
 
     if (this._modelready) {
       if (this._to_animate) {
@@ -446,7 +446,7 @@ export class Hass3dFloorplan extends LitElement {
 
     this._renderer.setAnimationLoop(null);
     this._resizeObserver.disconnect();
-    window.clearInterval(this._zIndexInterval);
+    this._stopVisibilityWatch();
 
     this._renderer.domElement.remove();
     this._renderer = null;
@@ -776,38 +776,49 @@ export class Hass3dFloorplan extends LitElement {
     this._defaultaction(intersects);
   }
 
-  private _zIndexChecker(): void {
-    let centerX = (this._card.getBoundingClientRect().left + this._card.getBoundingClientRect().right) / 2;
-    let centerY = (this._card.getBoundingClientRect().top + this._card.getBoundingClientRect().bottom) / 2;
-    let topElement = this._haShadowRoot.elementFromPoint(centerX, centerY);
+  // Event-driven replacement for the old 250ms z-index polling: pause the
+  // animation loop when the card scrolls out of view or the page is hidden
+  // (app backgrounded), resume when it becomes visible again.
+  private _startVisibilityWatch(): void {
+    this._stopVisibilityWatch();
 
-    if (topElement != null) {
-      // elementFromPoint can return any element; only shadow hosts have .shadowRoot.
-      // Fall back to the element itself when there's no shadow root or first child.
-      const shadowChild = topElement.shadowRoot?.firstElementChild ?? null;
-      let topZIndex = this._getZIndex(shadowChild ?? topElement);
-      let myZIndex = this._getZIndex(this._card);
+    if (this._card) {
+      this._visibilityObserver = new IntersectionObserver((entries) => {
+        this._isOffscreen = !entries[entries.length - 1].isIntersecting;
+        this._updateVisibilityState();
+      });
+      this._visibilityObserver.observe(this._card);
+    }
 
-      if (myZIndex != topZIndex) {
-        if (!this._cardObscured) {
-          this._cardObscured = true;
+    document.addEventListener('visibilitychange', this._documentVisibilityListener);
+    this._updateVisibilityState();
+  }
 
-          if (this._to_animate) {
-            console.log('Canvas Obscured; stopping animation');
-            this._clock = null;
-            this._renderer.setAnimationLoop(null);
-          }
-        }
+  private _stopVisibilityWatch(): void {
+    if (this._visibilityObserver) {
+      this._visibilityObserver.disconnect();
+      this._visibilityObserver = null;
+    }
+    document.removeEventListener('visibilitychange', this._documentVisibilityListener);
+  }
+
+  private _updateVisibilityState(): void {
+    const obscured = document.hidden || this._isOffscreen;
+
+    if (obscured == this._cardObscured) {
+      return;
+    }
+    this._cardObscured = obscured;
+
+    if (this._to_animate && this._renderer) {
+      if (obscured) {
+        console.log('Canvas hidden; stopping animation');
+        this._clock = null;
+        this._renderer.setAnimationLoop(null);
       } else {
-        if (this._cardObscured) {
-          this._cardObscured = false;
-
-          if (this._to_animate) {
-            console.log('Canvas visible again; starting animation');
-            this._clock = new THREE.Clock();
-            this._renderer.setAnimationLoop(() => this._animationLoop());
-          }
-        }
+        console.log('Canvas visible again; starting animation');
+        this._clock = new THREE.Clock();
+        this._renderer.setAnimationLoop(() => this._animationLoop());
       }
     }
   }
@@ -886,6 +897,13 @@ export class Hass3dFloorplan extends LitElement {
     } else {
       return '';
     }
+  }
+
+  private _colorsEqual(a: number[], b: number[]): boolean {
+    if (!Array.isArray(a) || !Array.isArray(b)) {
+      return a === b;
+    }
+    return a.length == b.length && a.every((value, index) => value === b[index]);
   }
 
   public set hass(hass: HomeAssistant) {
@@ -967,17 +985,11 @@ export class Hass3dFloorplan extends LitElement {
                 this._lights.push('');
               }
               let i = this._color.push([255, 255, 255]) - 1;
-              if (hass.states[entity.entity].attributes['color_mode']) {
-                if ((hass.states[entity.entity].attributes['color_mode'] = 'color_temp')) {
-                  this._color[i] = this._TemperatureToRGB(
-                    parseInt(hass.states[entity.entity].attributes['color_temp']),
-                  );
-                }
-              }
-              if ((hass.states[entity.entity].attributes['color_mode'] = 'rgb')) {
-                if (hass.states[entity.entity].attributes['rgb_color'] !== this._color[i]) {
-                  this._color[i] = hass.states[entity.entity].attributes['rgb_color'];
-                }
+              const attributes = hass.states[entity.entity].attributes;
+              if (attributes['color_mode'] == 'color_temp' && attributes['color_temp']) {
+                this._color[i] = this._TemperatureToRGB(parseInt(attributes['color_temp']));
+              } else if (attributes['rgb_color']) {
+                this._color[i] = attributes['rgb_color'];
               }
               let j = this._brightness.push(-1) - 1;
               if (hass.states[entity.entity].attributes['brightness']) {
@@ -1031,22 +1043,16 @@ export class Hass3dFloorplan extends LitElement {
                   toupdate = true;
                 }
                 if (hass.states[entity.entity].attributes['color_mode']) {
-                  if ((hass.states[entity.entity].attributes['color_mode'] = 'color_temp')) {
-                    if (
-                      this._TemperatureToRGB(parseInt(hass.states[entity.entity].attributes['color_temp'])) !==
-                      this._color[i]
-                    ) {
-                      toupdate = true;
-                      this._color[i] = this._TemperatureToRGB(
-                        parseInt(hass.states[entity.entity].attributes['color_temp']),
-                      );
-                    }
+                  const attributes = hass.states[entity.entity].attributes;
+                  let newcolor: number[] = null;
+                  if (attributes['color_mode'] == 'color_temp' && attributes['color_temp']) {
+                    newcolor = this._TemperatureToRGB(parseInt(attributes['color_temp']));
+                  } else if (attributes['rgb_color']) {
+                    newcolor = attributes['rgb_color'];
                   }
-                  if ((hass.states[entity.entity].attributes['color_mode'] = 'rgb')) {
-                    if (hass.states[entity.entity].attributes['rgb_color'] !== this._color[i]) {
-                      toupdate = true;
-                      this._color[i] = hass.states[entity.entity].attributes['rgb_color'];
-                    }
+                  if (newcolor && !this._colorsEqual(newcolor, this._color[i])) {
+                    toupdate = true;
+                    this._color[i] = newcolor;
                   }
                 }
                 if (hass.states[entity.entity].attributes['brightness']) {
@@ -1335,6 +1341,21 @@ export class Hass3dFloorplan extends LitElement {
     console.log('Max Texture Image Units: number of lights casting shadow should be less than the above number');
 
     const availableshadows = Math.max(6, this._maxtextureimage - 4);
+
+    // Mobile browsers evict WebGL contexts under memory pressure. three re-inits
+    // the GL state on restore, but this card only renders on demand, so without
+    // this the canvas would stay blank until the next interaction.
+    this._renderer.domElement.addEventListener('webglcontextlost', (evt: Event) => {
+      evt.preventDefault();
+      console.warn('hass-3d-floorplan: WebGL context lost; waiting for restore');
+    });
+    this._renderer.domElement.addEventListener('webglcontextrestored', () => {
+      console.log('hass-3d-floorplan: WebGL context restored; re-rendering');
+      if (this._modelready && this._renderer) {
+        this._renderer.shadowMap.needsUpdate = true;
+        this._render();
+      }
+    });
 
     this._renderer.domElement.style.width = '100%';
     this._renderer.domElement.style.height = '100%';
@@ -1693,9 +1714,7 @@ export class Hass3dFloorplan extends LitElement {
       });
       */
 
-      this._zIndexInterval = window.setInterval(() => {
-        this._zIndexChecker();
-      }, 250);
+      this._startVisibilityWatch();
 
       if (this._ispanel() || this._issidebar()) {
         this._resizeObserver.observe(this._card);
