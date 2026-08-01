@@ -562,13 +562,39 @@ export class Hass3dFloorplan extends LitElement {
   }
 
   private _getintersect(e: any): THREE.Intersection[] {
+    if (!this._camera || !this._content || !this._raycasting?.length) return [];
+
+    const width = this._content.clientWidth;
+    const height = this._content.clientHeight;
+    if (!width || !height) return [];
+
+    let offsetX: number | undefined = e?.offsetX;
+    let offsetY: number | undefined = e?.offsetY;
+
+    // TouchEvent (iOS/Android) has no offsetX/offsetY — derive from the first touch point.
+    if (offsetX === undefined || offsetY === undefined) {
+      const touch = e?.touches?.[0] || e?.changedTouches?.[0];
+      if (touch) {
+        const rect = this._content.getBoundingClientRect();
+        offsetX = touch.clientX - rect.left;
+        offsetY = touch.clientY - rect.top;
+      }
+    }
+
+    if (!Number.isFinite(offsetX) || !Number.isFinite(offsetY)) return [];
+
     const mouse: THREE.Vector2 = new THREE.Vector2();
-    mouse.x = (e.offsetX / this._content.clientWidth) * 2 - 1;
-    mouse.y = -(e.offsetY / this._content.clientHeight) * 2 + 1;
+    mouse.x = ((offsetX as number) / width) * 2 - 1;
+    mouse.y = -((offsetY as number) / height) * 2 + 1;
     const raycaster: THREE.Raycaster = new THREE.Raycaster();
     raycaster.setFromCamera(mouse, this._camera);
-    const intersects: THREE.Intersection[] = raycaster.intersectObjects(this._raycasting, false);
-    return intersects;
+
+    try {
+      return raycaster.intersectObjects(this._raycasting, false);
+    } catch (err) {
+      console.warn('hass-3d-floorplan: raycast failed', err);
+      return [];
+    }
   }
 
   private _mousedownEvent(e: any): void {
@@ -753,7 +779,10 @@ export class Hass3dFloorplan extends LitElement {
     let topElement = this._haShadowRoot.elementFromPoint(centerX, centerY);
 
     if (topElement != null) {
-      let topZIndex = this._getZIndex(topElement.shadowRoot.firstElementChild);
+      // elementFromPoint can return any element; only shadow hosts have .shadowRoot.
+      // Fall back to the element itself when there's no shadow root or first child.
+      const shadowChild = topElement.shadowRoot?.firstElementChild ?? null;
+      let topZIndex = this._getZIndex(shadowChild ?? topElement);
       let myZIndex = this._getZIndex(this._card);
 
       if (myZIndex != topZIndex) {
@@ -784,7 +813,7 @@ export class Hass3dFloorplan extends LitElement {
     let returnVal: string;
 
     if (toCheck == null) {
-      returnVal = '0';
+      return '0';
     }
 
     if (toCheck.parentNode == null) {
