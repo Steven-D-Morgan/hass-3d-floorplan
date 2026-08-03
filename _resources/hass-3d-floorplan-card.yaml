@@ -1,0 +1,330 @@
+# ============================================================================
+# hass-3d-floorplan card — verified-objects-only version
+# ============================================================================
+# Only entities whose object_ids exist in the OBJ model.
+# Room-based entities are commented out until room_N_1 IDs are mapped.
+# ============================================================================
+
+type: custom:hass-3d-floorplan
+path: /local/Claude/
+name: Home
+objfile: home.obj
+mtlfile: home.mtl
+objectlist: home.json
+lock_camera: "no"
+header: "yes"
+click: "yes"
+overlay: "no"
+backgroundColor: "#aaaaaa"
+hideLevelsMenu: "no"
+globalLightPower: "0.8"
+shadow: "no"
+extralightmode: "yes"
+show_axes: "no"
+sky: "no"
+overlay_bgcolor: transparent
+overlay_fgcolor: black
+overlay_alignment: top-left
+overlay_width: "33"
+overlay_height: "20"
+north:
+  x: 0
+  z: -1
+camera_position:
+  x: 609.3072605703628
+  "y": 905.5330092468828
+  z: 376.66437610591277
+camera_rotate:
+  x: -1.0930244719682243
+  "y": 0.5200808414019678
+  z: 0.7648717152512469
+camera_target:
+  x: 37.36890424945437
+  "y": 18.64464320782064
+  z: -82.55051697031719
+zoom_areas: []
+
+object_groups:
+  - object_group: GarageDoor
+    objects:
+      - object_id: Garage_Door_1
+      - object_id: Garage_Door_2
+
+  - object_group: FrontDoor
+    objects:
+      - object_id: Door_Exterior_Front_1
+      - object_id: Door_Exterior_Front_2
+      - object_id: Door_Exterior_Front_3
+      - object_id: Door_Exterior_Front_4
+      - object_id: Door_Exterior_Front_5
+      - object_id: Door_Exterior_Front_6
+      - object_id: Door_Exterior_Front_7
+      - object_id: Door_Exterior_Front_8
+      - object_id: Door_Exterior_Front_9
+      - object_id: Door_Exterior_Front_10
+      - object_id: Door_Exterior_Front_11
+      - object_id: Door_Exterior_Front_12
+
+  - object_group: KitchenCans
+    objects:
+      - object_id: Kitchen_Can_1_1
+      - object_id: Kitchen_Can_2_1
+      - object_id: Kitchen_Can_3_1
+      - object_id: Kitchen_Can_4_1
+
+  - object_group: KitchenPendants
+    objects:
+      - object_id: Kitchen_Pendant_1_1
+      - object_id: Kitchen_Pendant_2_1
+      - object_id: Kitchen_Pendant_Stem_1
+      - object_id: Kitchen_Island_Chandelier_1
+
+  # Second floor lamp mesh is split into pole+base in the OBJ (no _02_1 sibling).
+  - object_group: LivingRoomFloorLamp02
+    objects:
+      - object_id: Floor_Lamp_Pole_1
+      - object_id: Floor_Lamp_Base_1
+
+entities:
+
+  # ── LOCKS ──
+  - entity: lock.front_door_deadbolt
+    type3d: color
+    object_id: <FrontDoor>
+    colorcondition:
+      - state: locked
+        color: "#4caf50"
+      - state: unlocked
+        color: "#f44336"
+
+  - entity: lock.garage_exterior_deadbolt
+    type3d: color
+    object_id: Garage_Door_1
+    colorcondition:
+      - state: locked
+        color: "#4caf50"
+      - state: unlocked
+        color: "#f44336"
+
+  # ── COVER ──
+  - entity: cover.garage_door
+    type3d: cover
+    object_id: <GarageDoor>
+    cover:
+      pane: <GarageDoor>
+      side: up
+      percentage: "90"
+
+  # ── LIGHTS on fixture meshes ──
+  - entity: light.kitchen_ceiling
+    type3d: light
+    object_id: <KitchenCans>
+    light:
+      lumens: "800"
+
+  - entity: light.kitchen_sink
+    type3d: light
+    object_id: <KitchenPendants>
+    light:
+      lumens: "600"
+
+  - entity: light.front_porch
+    type3d: light
+    object_id: FrontPorchLeft_5
+    light:
+      lumens: "3000"
+
+  - entity: light.front_porch
+    type3d: light
+    object_id: FrontPorchRight_5
+    light:
+      lumens: "3000"
+
+  # ── LIVING ROOM: 4 RGB cans + 2 floor lamps + fan light ──
+  # Cans are RGB — light block color follows the entity's rgb_color attribute.
+  - entity: light.living_room_front_left
+    type3d: light
+    object_id: Living_Room_Front_Left_1
+    light:
+      lumens: "800"
+      color: rgb
+
+  - entity: light.living_room_front_right
+    type3d: light
+    object_id: Living_Room_Front_Right_1
+    light:
+      lumens: "800"
+      color: rgb
+
+  - entity: light.living_room_back_left
+    type3d: light
+    object_id: Living_Room_Back_Left_1
+    light:
+      lumens: "800"
+      color: rgb
+
+  - entity: light.living_room_back_right
+    type3d: light
+    object_id: Living_Room_Back_Right_1
+    light:
+      lumens: "800"
+      color: rgb
+
+  - entity: light.living_room_floor_lamp_01
+    type3d: light
+    object_id: Living_Room_Floor_Lamp_01_1
+    light:
+      lumens: "1200"
+
+  - entity: light.living_room_floor_lamp_02
+    type3d: light
+    object_id: <LivingRoomFloorLamp02>
+    light:
+      lumens: "1200"
+
+  # light.family_room_fan_light removed — no matching mesh in home.obj.
+
+  # ── ROOMS (floor planes) ──
+  # Room-to-index mapping derived from 507-Woodgate-full.sh3d export order.
+  # type3d: color tints the floor plane based on entity state.
+
+  # room_0_1 = Screen Porch
+  - entity: light.screen_porch
+    type3d: color
+    object_id: room_0_1
+    colorcondition:
+      - state: "on"
+        color: "#fff9c4"
+      - state: "off"
+        color: "#212121"
+
+  # room_1_1 = unnamed (bathroom/utility 1)
+  # room_2_1 = unnamed (bathroom/utility 2)
+  # room_3_1 = unnamed (bathroom/utility 3)
+
+  # room_4_1 = Cooper's Bedroom
+  - entity: light.coopers_bedroom
+    type3d: color
+    object_id: room_4_1
+    colorcondition:
+      - state: "on"
+        color: "#fff9c4"
+      - state: "off"
+        color: "#212121"
+
+  # room_5_1 = unnamed (hallway/closet)
+  # room_6_1 = unnamed
+  # room_7_1 = unnamed
+
+  # room_8_1 = Master Bedroom
+  - entity: light.master_bedroom
+    type3d: color
+    object_id: room_8_1
+    colorcondition:
+      - state: "on"
+        color: "#fff9c4"
+      - state: "off"
+        color: "#212121"
+
+  # room_9_1  = unnamed (MBR bath/closet area)
+  # room_10_1 = unnamed
+  # room_11_1 = unnamed
+  # room_12_1 = unnamed
+  # room_13_1 = unnamed
+  # room_14_1 = unnamed
+  # room_15_1 = unnamed
+  # room_16_1 = unnamed
+  # room_17_1 = unnamed
+
+  # room_18_1 = Stairwell Closet
+  - entity: light.stairwell_closet
+    type3d: color
+    object_id: room_18_1
+    colorcondition:
+      - state: "on"
+        color: "#fff9c4"
+      - state: "off"
+        color: "#212121"
+
+  # room_19_1 = unnamed
+
+  # room_20_1 = Kitchen
+  - entity: light.kitchen
+    type3d: color
+    object_id: room_20_1
+    colorcondition:
+      - state: "on"
+        color: "#fff9c4"
+      - state: "off"
+        color: "#212121"
+
+  # room_21_1 = Dining
+  - entity: light.dining_room
+    type3d: color
+    object_id: room_21_1
+    colorcondition:
+      - state: "on"
+        color: "#fff9c4"
+      - state: "off"
+        color: "#212121"
+
+  # room_22_1 = Living Room
+  - entity: light.living_room
+    type3d: color
+    object_id: room_22_1
+    colorcondition:
+      - state: "on"
+        color: "#fff9c4"
+      - state: "off"
+        color: "#212121"
+
+  # room_23_1 = Breakfast Room
+  - entity: light.breakfast_room
+    type3d: color
+    object_id: room_23_1
+    colorcondition:
+      - state: "on"
+        color: "#fff9c4"
+      - state: "off"
+        color: "#212121"
+
+  # room_24_1 = Abel's Bedroom
+  - entity: light.abels_bedroom
+    type3d: color
+    object_id: room_24_1
+    colorcondition:
+      - state: "on"
+        color: "#fff9c4"
+      - state: "off"
+        color: "#212121"
+
+  # room_25_1 = unnamed
+  # room_26_1 = Front Porch
+  - entity: light.front_porch
+    type3d: color
+    object_id: room_26_1
+    colorcondition:
+      - state: "on"
+        color: "#fff9c4"
+      - state: "off"
+        color: "#212121"
+
+  # room_27_1 = Bonus Room (upstairs L1)
+  - entity: light.bonus_room
+    type3d: color
+    object_id: room_27_1
+    colorcondition:
+      - state: "on"
+        color: "#fff9c4"
+      - state: "off"
+        color: "#212121"
+
+  # room_28_1 / room_28_2 = Stairwell (L1)
+  - entity: light.stairwell
+    type3d: color
+    object_id: room_28_1
+    colorcondition:
+      - state: "on"
+        color: "#fff9c4"
+      - state: "off"
+        color: "#212121"
