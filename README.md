@@ -6,9 +6,17 @@
 
 <p align="center">
   <a href="https://github.com/hacs/integration"><img src="https://img.shields.io/badge/HACS-Custom-41BDF5.svg?style=for-the-badge" alt="HACS"></a>
+  <a href="https://github.com/Steven-D-Morgan/hass-3d-floorplan/releases"><img src="https://img.shields.io/github/downloads/Steven-D-Morgan/hass-3d-floorplan/total?style=for-the-badge&color=41BDF5" alt="Downloads"></a>
+  <a href="https://github.com/Steven-D-Morgan/hass-3d-floorplan/releases/latest"><img src="https://img.shields.io/github/v/release/Steven-D-Morgan/hass-3d-floorplan?style=for-the-badge&color=41BDF5" alt="Latest release"></a>
 </p>
 
 <p align="center">Interactive 3D floorplan card for Home Assistant.<br>Render your home as a live 3D model with entity bindings for lights, doors, covers, sensors, and more.</p>
+
+<p align="center">
+  <img src="_resources/My%20Home%20%28Sample%29.jpg" alt="Sample home rendered by HASS 3D Floorplan, with lit rooms, RGB living-room cans, and an open garage" width="760">
+  <br>
+  <em>A real home rendered by the card. Walk through its configuration in <a href="#example-a-complete-home">Example: a complete home</a>.</em>
+</p>
 
 > Based on [floor3d-card](https://github.com/adizanni/floor3d-card) by Andrea Di Zanni.
 
@@ -392,6 +400,99 @@ mtlfile: MyExampleHome2.mtl
 backgroundColor: '#000001'
 globalLightPower: 0.4
 ```
+
+## Example: a complete home
+
+The screenshot at the top of this page is a real two-storey home driven by the card. The full configuration is included in this repo at [`_resources/hass-3d-floorplan-card.yaml`](_resources/hass-3d-floorplan-card.yaml) — copy it as a starting point and swap in your own entity IDs and object names. The sections below walk through the techniques it demonstrates.
+
+<p align="center">
+  <img src="_resources/My%20Home%20%28Sample%29.jpg" alt="The sample home with rooms tinted by their light state, RGB living-room cans, and the garage cover open" width="720">
+</p>
+
+### Object groups — bind one entity to many meshes
+
+Exported models often split a single real-world object (a garage door, a multi-part front door, a set of recessed cans) into many meshes. Declare an **object group** once, then reference it from an entity as `<GroupName>`:
+
+```yaml
+object_groups:
+  - object_group: GarageDoor
+    objects:
+      - object_id: Garage_Door_1
+      - object_id: Garage_Door_2
+  - object_group: KitchenCans
+    objects:
+      - object_id: Kitchen_Can_1_1
+      - object_id: Kitchen_Can_2_1
+      - object_id: Kitchen_Can_3_1
+      - object_id: Kitchen_Can_4_1
+```
+
+### Locks and doors — tint a mesh by state (`type3d: color`)
+
+A `color` binding recolors its object(s) per entity state. Here a deadbolt turns its door green when locked, red when unlocked:
+
+```yaml
+- entity: lock.front_door_deadbolt
+  type3d: color
+  object_id: <FrontDoor>          # references the FrontDoor object group
+  colorcondition:
+    - state: locked
+      color: '#4caf50'
+    - state: unlocked
+      color: '#f44336'
+```
+
+### Garage — a cover that slides open (`type3d: cover`)
+
+A `cover` binding clips the mesh open in proportion to the entity's `current_position`. `pane` is the surface it slides along and `side` is the direction it opens:
+
+```yaml
+- entity: cover.garage_door
+  type3d: cover
+  object_id: <GarageDoor>
+  cover:
+    pane: <GarageDoor>
+    side: up
+    percentage: '90'
+```
+
+### Lights — glow from a fixture mesh (`type3d: light`)
+
+A `light` binding places a virtual light at the fixture and follows the entity's on/off, brightness, and (optionally) color. Add `color: rgb` to make the emitted colour track the light's `rgb_color` attribute — used here for the living-room cans:
+
+```yaml
+- entity: light.kitchen_ceiling
+  type3d: light
+  object_id: <KitchenCans>
+  light:
+    lumens: '800'
+
+- entity: light.living_room_front_left
+  type3d: light
+  object_id: Living_Room_Front_Left_1
+  light:
+    lumens: '800'
+    color: rgb
+```
+
+### Rooms — light up the floor plane
+
+For an at-a-glance "which rooms are on" view, tint each room's floor plane by its light's state. If you export with the [ExportToHASS](https://github.com/adizanni/ExportToHASS) plugin, room floors are named `room_N_1`:
+
+```yaml
+- entity: light.kitchen
+  type3d: color
+  object_id: room_20_1
+  colorcondition:
+    - state: 'on'
+      color: '#fff9c4'      # warm glow
+    - state: 'off'
+      color: '#212121'      # dark
+```
+
+### Camera framing
+
+The `camera_position`, `camera_rotate`, and `camera_target` in the example set the opening view. To capture your own, open the dashboard in edit mode and double-click an empty part of the canvas after positioning the camera — the card prints the YAML for the current view (see [Camera Rotation, Camera Position and Camera direction](#camera-rotation-camera-position-and-camera-direction)).
 
 ## Working with levels
 
