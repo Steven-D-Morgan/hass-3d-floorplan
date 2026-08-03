@@ -2,3 +2,7 @@
 /.rpt2_cache/
 package-lock.json
 /dist
+/dev/models/
+/test-results/
+/playwright-report/
+/playwright/.cache/

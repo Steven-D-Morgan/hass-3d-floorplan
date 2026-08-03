@@ -3,6 +3,10 @@
     "version": "Version",
     "invalid_configuration": "Ungültige Konfiguration",
     "show_warning": "Warnung anzeigen",
-    "show_error": "Fehler anzeigen"
+    "show_error": "Fehler anzeigen",
+    "loading": "Wird geladen",
+    "finishing": "Wird abgeschlossen",
+    "error_loading": "Fehler beim Laden des Modells: siehe Konsolenprotokoll",
+    "error_parsing": "Fehler beim Verarbeiten des Modells: siehe Konsolenprotokoll"
   }
 }

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>hass-3d-floorplan harness</title>
+<style>
+  body { margin: 0; font-family: sans-serif; background: #202124; color: #eee; }
+  #info { padding: 6px 10px; font-size: 13px; }
+  ha-card { display: block; }
+</style>
+</head>
+<body>
+<div id="info">loading…</div>
+<home-assistant></home-assistant>
+<script>
+  // Recreate the shadow-DOM chain the card walks in _ispanel()/_issidebar().
+  const ha = document.querySelector('home-assistant');
+  const haRoot = ha.attachShadow({ mode: 'open' });
+  const main = document.createElement('home-assistant-main');
+  haRoot.appendChild(main);
+  const mainRoot = main.attachShadow({ mode: 'open' });
+  const drawer = document.createElement('ha-drawer');
+  const resolver = document.createElement('partial-panel-resolver');
+  drawer.appendChild(resolver);
+  mainRoot.appendChild(drawer);
+  const panel = document.createElement('ha-panel-lovelace');
+  resolver.appendChild(panel);
+  const huiRoot = document.createElement('hui-root');
+  panel.appendChild(huiRoot);
+  const huiView = document.createElement('hui-view');
+  huiRoot.appendChild(huiView);
+  window.__huiView = huiView;
+</script>
+<script type="module">
+  import '/dist/hass-3d-floorplan.js';
+
+  const params = new URLSearchParams(location.search);
+  const file = params.get('file') || 'cube.glb';
+  const dpr = params.get('dpr');
+  const cache = params.get('cache');
+  const debug = params.get('debug');
+
+  const config = {
+    type: 'custom:hass-3d-floorplan',
+    path: '/dev/models/',
+    objfile: file,
+    name: 'Harness',
+    header: 'yes',
+    backgroundColor: '#336699',
+    shadow: 'no',
+    sky: 'no',
+    globalLightPower: '0.8',
+    style: 'display:block; overflow:hidden; width:800px; height:520px; position:relative;',
+    entities: [
+      { entity: 'binary_sensor.test', type3d: 'hide', object_id: 'Floor_1', hide: { state: 'off' } },
+      { entity: 'light.test', type3d: 'light', object_id: 'Box_1', light: { lumens: '800' } },
+    ],
+  };
+  if (dpr) config.max_pixel_ratio = dpr;
+  if (cache) config.model_cache = cache;
+  if (debug) config.debug = debug;
+
+  const makeHass = (rgb, brightness) => ({
+    states: {
+      'binary_sensor.test': { state: 'on', attributes: { friendly_name: 'Test Sensor' } },
+      'light.test': {
+        state: 'on',
+        attributes: { friendly_name: 'Test Light', color_mode: 'rgb', rgb_color: rgb, brightness: brightness },
+      },
+    },
+    callService: () => {},
+  });
+  window.__makeHass = makeHass;
+
+  customElements.whenDefined('hass-3d-floorplan').then(() => {
+    const card = document.createElement('hass-3d-floorplan');
+    card.setConfig(config);
+    card.hass = makeHass([255, 0, 0], 200);
+    window.__huiView.appendChild(card);
+    window.__card = card;
+    document.getElementById('info').textContent = 'file=' + file;
+
+    window.__metrics = () => {
+      const canvas = card.shadowRoot.querySelector('canvas');
+      if (!canvas) return { ready: false };
+      return {
+        ready: true,
+        canvasWidth: canvas.width,
+        canvasHeight: canvas.height,
+        devicePixelRatio: window.devicePixelRatio,
+      };
+    };
+
+    // Render once on demand and sample a pixel; used by the smoke test.
+    window.__samplePixel = (x, y) => {
+      const canvas = card.shadowRoot.querySelector('canvas');
+      if (!canvas) return null;
+      card._render();
+      const c2 = document.createElement('canvas');
+      c2.width = canvas.width;
+      c2.height = canvas.height;
+      c2.getContext('2d').drawImage(canvas, 0, 0);
+      return Array.from(c2.getContext('2d').getImageData(x, y, 1, 1).data);
+    };
+  });
+</script>
+</body>
+</html>

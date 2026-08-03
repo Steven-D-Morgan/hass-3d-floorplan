@@ -16,5 +16,8 @@ module.exports = {
       "@typescript-eslint/no-non-null-assertion": "off",
       "@typescript-eslint/no-explicit-any": "off",
       "@typescript-eslint/camelcase": "off",
+      // Reject `if ((x = y))` — an assignment-as-condition that reads as a
+      // comparison. 'always' flags it even when wrapped in extra parens.
+      "no-cond-assign": ["error", "always"],
     }
 };

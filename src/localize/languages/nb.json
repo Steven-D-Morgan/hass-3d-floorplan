@@ -3,6 +3,10 @@
     "version": "Versjon",
     "invalid_configuration": "Ikke gyldig konfigurasjon",
     "show_warning": "Vis advarsel",
-    "show_error": "Vis feil"
+    "show_error": "Vis feil",
+    "loading": "Laster",
+    "finishing": "Fullfører",
+    "error_loading": "Feil ved lasting av modell: se konsolloggen",
+    "error_parsing": "Feil ved tolking av modell: se konsolloggen"
   }
 }

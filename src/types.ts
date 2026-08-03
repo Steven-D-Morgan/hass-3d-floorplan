@@ -106,6 +106,7 @@ export interface Hass3dFloorplanConfig {
   max_pixel_ratio: string;
   draco_decoder_path: string;
   model_cache: string;
+  debug: string;
 }
 
 export interface EntityHass3dFloorplanConfig {

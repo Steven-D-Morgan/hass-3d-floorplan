@@ -1158,6 +1158,55 @@ export class Hass3dFloorplanEditor extends LitElement implements LovelaceCardEdi
                     <mwc-list-item value="yes">yes</mwc-list-item>
                     <mwc-list-item value="no">no</mwc-list-item>
                 </h3d-select>
+                <h3d-formfield alignEnd label="Max Pixel Ratio (mobile perf)">
+                  <h3d-textfield
+                    type="number"
+                    min="0.5"
+                    max="4"
+                    step="0.5"
+                    .value=${config.max_pixel_ratio ? config.max_pixel_ratio : '2'}
+                    .configObject=${config}
+                    .configAttribute=${'max_pixel_ratio'}
+                    .ignoreNull=${false}
+                    @input=${this._valueChanged}
+                  ></h3d-textfield>
+                </h3d-formfield>
+                <h3d-select
+                  label="Cache Model on Device (<yes>/no)"
+                  @selected=${this._valueChanged}
+                  .value=${config.model_cache ? config.model_cache : 'yes'}
+                  .configObject=${config}
+                  .configAttribute=${'model_cache'}
+                  .ignoreNull=${false}
+                  @closed=${(ev) => ev.stopPropagation()}
+                >
+                    <mwc-list-item></mwc-list-item>
+                    <mwc-list-item value="yes">yes</mwc-list-item>
+                    <mwc-list-item value="no">no</mwc-list-item>
+                </h3d-select>
+                <h3d-textfield
+                  label="Draco Decoder Path (compressed glb)"
+                  fullwidth
+                  .value=${config.draco_decoder_path
+                    ? config.draco_decoder_path
+                    : 'https://www.gstatic.com/draco/versioned/decoders/1.5.6/'}
+                  .configObject=${config}
+                  .configAttribute=${'draco_decoder_path'}
+                  @input=${this._valueChanged}
+                ></h3d-textfield>
+                <h3d-select
+                  label="Debug Logging (yes/<no>)"
+                  @selected=${this._valueChanged}
+                  .value=${config.debug ? config.debug : 'no'}
+                  .configObject=${config}
+                  .configAttribute=${'debug'}
+                  .ignoreNull=${false}
+                  @closed=${(ev) => ev.stopPropagation()}
+                >
+                    <mwc-list-item></mwc-list-item>
+                    <mwc-list-item value="yes">yes</mwc-list-item>
+                    <mwc-list-item value="no">no</mwc-list-item>
+                </h3d-select>
                 <paper-input
                   editable
                   label="North Direction {x: xxxx,z: zzzzzz }"

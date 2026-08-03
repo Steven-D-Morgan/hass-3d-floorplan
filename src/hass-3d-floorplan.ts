@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/ban-types */
+﻿/* eslint-disable @typescript-eslint/ban-types */
 import { LitElement, html, TemplateResult, css, PropertyValues, CSSResultGroup, render } from 'lit';
 import { property, customElement, state } from 'lit/decorators';
 import {
@@ -103,7 +103,6 @@ export class Hass3dFloorplan extends LitElement {
   private _overlay_entity: string;
   private _overlay_state: string;
 
-  private _eval: Function;
   private _firstcall?: boolean;
   private _resizeTimeout?: number;
   private _resizeObserver: ResizeObserver;
@@ -176,10 +175,17 @@ export class Hass3dFloorplan extends LitElement {
     };
     this._isOffscreen = false;
     this._documentVisibilityListener = () => this._updateVisibilityState();
-    this._eval = eval;
     this._card_id = 'ha-card-1';
 
-    console.log('New Card');
+    this._log('New Card');
+  }
+
+  // Informational logging, silenced unless `debug: yes` is set in the card config.
+  // Warnings and errors always use console.warn/console.error directly.
+  private _log(...args: any[]): void {
+    if (this._config && this._config.debug == 'yes') {
+      console.log(...args);
+    }
   }
 
   public connectedCallback(): void {
@@ -222,7 +228,6 @@ export class Hass3dFloorplan extends LitElement {
   }
 
   public static getStubConfig(hass: HomeAssistant, entities: string[], entitiesFallback: string[]): object {
-    console.log('Stub started');
 
     const entityFilter = (stateObj: HassEntity): boolean => {
       return !isNaN(Number(stateObj.state));
@@ -385,9 +390,6 @@ export class Hass3dFloorplan extends LitElement {
       });
     }
 
-    console.log(conf);
-
-    console.log('Stub ended');
     return conf;
   }
 
@@ -399,7 +401,7 @@ export class Hass3dFloorplan extends LitElement {
   // https://lit-element.polymer-project.org/guide/properties#accessors-custom
   public setConfig(config: Hass3dFloorplanConfig): void {
     // TODO Check for required fields and that they are of the proper format
-    console.log('hass-3d-floorplan: Set Config Start');
+    this._log('hass-3d-floorplan: Set Config Start');
 
     if (!config) {
       throw new Error(localize('common.invalid_configuration'));
@@ -425,7 +427,7 @@ export class Hass3dFloorplan extends LitElement {
       i += 1;
     });
 
-    console.log('hass-3d-floorplan: Set Config End');
+    this._log('hass-3d-floorplan: Set Config End');
 
     if (this._config.show_warning) {
       render(this._showWarning(localize('common.show_warning')), this._card);
@@ -470,6 +472,12 @@ export class Hass3dFloorplan extends LitElement {
     root = (root && root.shadowRoot) || root;
     root = root && root.querySelector('hui-view');
 
+    // The shadow-DOM path above can break if Home Assistant restructures its
+    // frontend; degrade to "not a panel" instead of throwing on a null root.
+    if (!root) {
+      return false;
+    }
+
     const panel: [] = root.getElementsByTagName('HUI-PANEL-VIEW');
 
     if (panel) {
@@ -498,6 +506,10 @@ export class Hass3dFloorplan extends LitElement {
     root = (root && root.shadowRoot) || root;
     root = root && root.querySelector('hui-view');
 
+    if (!root) {
+      return false;
+    }
+
     const sidebar: [] = root.getElementsByTagName('HUI-SIDEBAR-VIEW');
 
     if (sidebar) {
@@ -512,7 +524,7 @@ export class Hass3dFloorplan extends LitElement {
   }
 
   getCardSize(): number {
-    console.log('Get Card Size Called');
+    this._log('Get Card Size Called');
     if (this._renderer) {
       //return this._renderer.domElement.height / 50;
       return 10;
@@ -523,7 +535,7 @@ export class Hass3dFloorplan extends LitElement {
 
   firstUpdated(): void {
     //called after the model has been loaded into the Renderer and first render
-    console.log('First updated start');
+    this._log('First updated start');
 
     this._card = this.shadowRoot.getElementById(this._card_id);
     if (this._card) {
@@ -549,7 +561,7 @@ export class Hass3dFloorplan extends LitElement {
         this.display3dmodel();
       }
 
-      console.log('First updated end');
+      this._log('First updated end');
     }
   }
 
@@ -559,7 +571,7 @@ export class Hass3dFloorplan extends LitElement {
       this._torch.position.copy(this._camera.position);
       this._torch.rotation.copy(this._camera.rotation);
       this._camera.getWorldDirection(this._torch.target.position);
-      //console.log(this._renderer.info);
+      //this._log(this._renderer.info);
     }
     this._renderer.render(this._scene, this._camera);
   }
@@ -574,7 +586,7 @@ export class Hass3dFloorplan extends LitElement {
     let offsetX: number | undefined = e?.offsetX;
     let offsetY: number | undefined = e?.offsetY;
 
-    // TouchEvent (iOS/Android) has no offsetX/offsetY — derive from the first touch point.
+    // TouchEvent (iOS/Android) has no offsetX/offsetY â€” derive from the first touch point.
     if (offsetX === undefined || offsetY === undefined) {
       const touch = e?.touches?.[0] || e?.changedTouches?.[0];
       if (touch) {
@@ -693,7 +705,7 @@ export class Hass3dFloorplan extends LitElement {
       if (getLovelace().editMode && this._config.editModeNotifications != 'no') {
         window.prompt('Object:', objectName);
       }
-      console.log('Object:', objectName);
+      this._log('Object:', objectName);
 
       if (this._selectionModeEnabled) {
         // Color objects blue when we click them, so we can build a list of
@@ -714,7 +726,7 @@ export class Hass3dFloorplan extends LitElement {
           object.material = this._selectedmaterial;
         }
         this._selectedobjects = this._selectedobjects.sort();
-        console.log('Selected object IDs:', this._selectedobjects);
+        this._log('Selected object IDs:', this._selectedobjects);
         this._render();
         render(this._getSelectionBar(), this._selectionbar);
         return;
@@ -767,7 +779,7 @@ export class Hass3dFloorplan extends LitElement {
       if (getLovelace().editMode && this._config.editModeNotifications != 'no') {
         window.prompt('YAML:', cameraData);
       }
-      console.log('YAML:', cameraData);
+      this._log('YAML:', cameraData);
     }
   }
 
@@ -812,11 +824,11 @@ export class Hass3dFloorplan extends LitElement {
 
     if (this._to_animate && this._renderer) {
       if (obscured) {
-        console.log('Canvas hidden; stopping animation');
+        this._log('Canvas hidden; stopping animation');
         this._clock = null;
         this._renderer.setAnimationLoop(null);
       } else {
-        console.log('Canvas visible again; starting animation');
+        this._log('Canvas visible again; starting animation');
         this._clock = new THREE.Clock();
         this._renderer.setAnimationLoop(() => this._animationLoop());
       }
@@ -863,7 +875,7 @@ export class Hass3dFloorplan extends LitElement {
   }
 
   private _resizeCanvas(): void {
-    console.log('Resize canvas start');
+    this._log('Resize canvas start');
     if (
       this._renderer.domElement.parentElement.clientWidth !== this._renderer.domElement.width ||
       this._renderer.domElement.parentElement.clientHeight !== this._renderer.domElement.height
@@ -878,7 +890,7 @@ export class Hass3dFloorplan extends LitElement {
       );
       this._renderer.render(this._scene, this._camera);
     }
-    console.log('Resize canvas end');
+    this._log('Resize canvas end');
   }
 
   private _statewithtemplate(entity: Hass3dFloorplanConfig): string {
@@ -890,7 +902,13 @@ export class Hass3dFloorplan extends LitElement {
 
         if (trimmed.substring(0, 3) === '[[[' && trimmed.slice(-3) === ']]]' && trimmed.includes('$entity')) {
           const normal = trimmed.slice(3, -3).replace(/\$entity/g, state);
-          state = this._eval(normal);
+          try {
+            // new Function instead of raw eval: same dynamic evaluation of the
+            // author's template, but without capturing this method's local scope.
+            state = new Function('return (' + normal + ');')();
+          } catch (err) {
+            console.warn('hass-3d-floorplan: entity_template evaluation failed for <' + entity.entity + '>', err);
+          }
         }
       }
       return state;
@@ -996,7 +1014,7 @@ export class Hass3dFloorplan extends LitElement {
                 this._brightness[j] = hass.states[entity.entity].attributes['brightness'];
               }
             } else {
-              console.log('Entity <' + entity.entity + '> not found');
+              this._log('Entity <' + entity.entity + '> not found');
             }
           });
           this._firstcall = false;
@@ -1016,6 +1034,7 @@ export class Hass3dFloorplan extends LitElement {
             }
           }
           this._config.entities.forEach((entity, i) => {
+            try {
             if (hass.states[entity.entity]) {
               let state = this._statewithtemplate(entity);
               if (entity.type3d == 'cover') {
@@ -1140,7 +1159,15 @@ export class Hass3dFloorplan extends LitElement {
                 }
               }
             } else {
-              console.log('Entity <' + entity.entity + '> not found');
+              console.warn('hass-3d-floorplan: entity <' + entity.entity + '> not found');
+            }
+            } catch (entityError) {
+              // Isolate per-entity failures so one misconfigured binding does not
+              // stop every other entity's updates for the life of the card.
+              console.error(
+                'hass-3d-floorplan: error updating entity <' + entity.entity + '>',
+                entityError,
+              );
             }
           });
           if (torerender) {
@@ -1149,8 +1176,7 @@ export class Hass3dFloorplan extends LitElement {
         }
       }
     } catch (e) {
-      console.log(e);
-      throw new Error('Error in hass: ' + e);
+      console.error('hass-3d-floorplan: error in hass update', e);
     }
   }
 
@@ -1165,7 +1191,7 @@ export class Hass3dFloorplan extends LitElement {
     };
 
     //init sky
-    console.log('Init Sky');
+    this._log('Init Sky');
 
     this._sky = new Sky();
     this._sky.scale.setScalar(100000);
@@ -1179,7 +1205,7 @@ export class Hass3dFloorplan extends LitElement {
 
     // init ground
 
-    console.log('Init Ground');
+    this._log('Init Ground');
 
     const groundGeo = new THREE.PlaneGeometry(10000, 10000);
     const groundMat = new THREE.MeshLambertMaterial({ color: 0xffffff });
@@ -1194,7 +1220,7 @@ export class Hass3dFloorplan extends LitElement {
 
     // inti sun
 
-    console.log('Init Sun');
+    this._log('Init Sun');
 
     this._sun = new THREE.DirectionalLight(0xffffff, 2.0);
     const sun = new THREE.Vector3();
@@ -1319,7 +1345,7 @@ export class Hass3dFloorplan extends LitElement {
   protected display3dmodel(): void {
     //load the model into the GL Renderer
 
-    console.log('Start Build Renderer');
+    this._log('Start Build Renderer');
     this._modelready = false;
 
     //create and initialize scene and camera
@@ -1337,8 +1363,8 @@ export class Hass3dFloorplan extends LitElement {
       powerPreference: 'high-performance',
     });
     this._maxtextureimage = this._renderer.capabilities.maxTextures;
-    console.log('Max Texture Image Units: ' + this._maxtextureimage);
-    console.log('Max Texture Image Units: number of lights casting shadow should be less than the above number');
+    this._log('Max Texture Image Units: ' + this._maxtextureimage);
+    this._log('Max Texture Image Units: number of lights casting shadow should be less than the above number');
 
     const availableshadows = Math.max(6, this._maxtextureimage - 4);
 
@@ -1350,7 +1376,7 @@ export class Hass3dFloorplan extends LitElement {
       console.warn('hass-3d-floorplan: WebGL context lost; waiting for restore');
     });
     this._renderer.domElement.addEventListener('webglcontextrestored', () => {
-      console.log('hass-3d-floorplan: WebGL context restored; re-rendering');
+      this._log('hass-3d-floorplan: WebGL context restored; re-rendering');
       if (this._modelready && this._renderer) {
         this._renderer.shadowMap.needsUpdate = true;
         this._render();
@@ -1389,7 +1415,7 @@ export class Hass3dFloorplan extends LitElement {
       } else if (lastChar != '/') {
         path = path + '/';
       }
-      console.log('Path: ' + path);
+      this._log('Path: ' + path);
 
       let fileExt = this._config.objfile.split('?')[0].split('.').pop();
 
@@ -1441,7 +1467,7 @@ export class Hass3dFloorplan extends LitElement {
     } else {
       throw new Error('Path is empty');
     }
-    console.log('End Build Renderer');
+    this._log('End Build Renderer');
   }
 
   private _onLoadError(event: ErrorEvent): void {
@@ -1454,19 +1480,19 @@ export class Hass3dFloorplan extends LitElement {
       const buffer = await this._fetchModelBuffer(url);
 
       if (this._content) {
-        this._content.innerText = 'Loading: 100%';
+        this._content.innerText = localize('common.loading') + ': 100%';
       }
 
       loader.parse(buffer, path, this._onLoadedGLTF3DModel.bind(this), (error: ErrorEvent): void => {
         console.error('hass-3d-floorplan: failed to parse model', error);
         if (this._content) {
-          this._content.innerText = 'Error parsing model: check the console log';
+          this._content.innerText = localize('common.error_parsing');
         }
       });
     } catch (error) {
       console.error('hass-3d-floorplan: failed to load model', error);
       if (this._content) {
-        this._content.innerText = 'Error loading model: check the console log';
+        this._content.innerText = localize('common.error_loading');
       }
     }
   }
@@ -1483,7 +1509,7 @@ export class Hass3dFloorplan extends LitElement {
         const cached = await cache.match(url);
 
         if (cached) {
-          console.log('hass-3d-floorplan: model loaded from local cache');
+          this._log('hass-3d-floorplan: model loaded from local cache');
           this._revalidateModelCache(cache, url, cached);
           return await cached.arrayBuffer();
         }
@@ -1535,9 +1561,10 @@ export class Hass3dFloorplan extends LitElement {
       chunks.push(value);
       received += value.length;
       if (this._content) {
+        const loading = localize('common.loading');
         this._content.innerText = total
-          ? 'Loading: ' + Math.round((received / total) * 100) + '%'
-          : 'Loading: ' + (received / (1024 * 1024)).toFixed(1) + ' MB';
+          ? loading + ': ' + Math.round((received / total) * 100) + '%'
+          : loading + ': ' + (received / (1024 * 1024)).toFixed(1) + ' MB';
       }
     }
 
@@ -1575,7 +1602,7 @@ export class Hass3dFloorplan extends LitElement {
 
       if (response.ok && response.status != 304) {
         await cache.put(url, response);
-        console.log(
+        this._log(
           'hass-3d-floorplan: model file changed on the server; the new version will show on the next dashboard load',
         );
       }
@@ -1586,12 +1613,14 @@ export class Hass3dFloorplan extends LitElement {
 
   private _onLoadMaterialProgress(_progress: ProgressEvent): void {
     //progress function called at regular intervals during material loading process
-    this._content.innerText = '1/2: ' + Math.round((_progress.loaded / _progress.total) * 100) + '%';
+    this._content.innerText =
+      localize('common.loading') + ' 1/2: ' + Math.round((_progress.loaded / _progress.total) * 100) + '%';
   }
 
   private _onLoadObjectProgress(_progress: ProgressEvent): void {
     //progress function called at regular intervals during object loading process
-    this._content.innerText = '2/2: ' + Math.round((_progress.loaded / _progress.total) * 100) + '%';
+    this._content.innerText =
+      localize('common.loading') + ' 2/2: ' + Math.round((_progress.loaded / _progress.total) * 100) + '%';
   }
 
   private _onLoadedGLTF3DModel(gltf: GLTF) {
@@ -1601,7 +1630,7 @@ export class Hass3dFloorplan extends LitElement {
   private _onLoaded3DModel(object: Object3D): void {
     // Object Loaded Event: last root object passed to the function
 
-    console.log('Object loaded start');
+    this._log('Object loaded start');
 
     this._initobjects(object);
 
@@ -1615,7 +1644,7 @@ export class Hass3dFloorplan extends LitElement {
 
     this._bboxmodel.updateMatrixWorld(true);
 
-    this._content.innerText = 'Finished with errors: check the console log';
+    this._content.innerText = localize('common.finishing') + '…';
 
     if (this._config.show_axes) {
       if (this._config.show_axes == 'yes') {
@@ -1624,22 +1653,22 @@ export class Hass3dFloorplan extends LitElement {
     }
 
     if (this._config.shadow && this._config.shadow == 'yes') {
-      console.log('Shadow On');
+      this._log('Shadow On');
       this._renderer.shadowMap.enabled = true;
       this._renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       this._renderer.shadowMap.autoUpdate = false;
     } else {
-      console.log('Shadow Off');
+      this._log('Shadow Off');
       this._renderer.shadowMap.enabled = false;
     }
 
     this._add3dObjects();
 
-    console.log('Object loaded end');
+    this._log('Object loaded end');
 
     if (this._content && this._renderer) {
       this._modelready = true;
-      console.log('Show canvas');
+      this._log('Show canvas');
       this._levelbar = document.createElement('div');
       this._zoombar = document.createElement('div');
       this._selectionbar = document.createElement('div');
@@ -1723,7 +1752,7 @@ export class Hass3dFloorplan extends LitElement {
   }
 
   private _initobjects(object: THREE.Object3D) {
-    console.log('Ïnit Objects, Levels and Raycasting');
+    this._log('Ãnit Objects, Levels and Raycasting');
 
     let level = 0;
     this._levels = [];
@@ -1731,7 +1760,7 @@ export class Hass3dFloorplan extends LitElement {
     this._raycastinglevels = [];
     //TODO: explore solution with layers
 
-    console.log('Found level 0');
+    this._log('Found level 0');
 
     this._levels[0] = new THREE.Object3D();
     this._raycastinglevels[0] = [];
@@ -1751,7 +1780,7 @@ export class Hass3dFloorplan extends LitElement {
 
       if (found) {
         if (!this._levels[Number(found.groups?.level)]) {
-          console.log('Found level ' + found.groups?.level);
+          this._log('Found level ' + found.groups?.level);
           this._levels[Number(found.groups?.level)] = new THREE.Object3D();
           this._raycastinglevels[Number(found.groups?.level)] = [];
         }
@@ -1830,7 +1859,7 @@ export class Hass3dFloorplan extends LitElement {
         this._raycasting = this._raycasting.concat(this._raycastinglevels[index]);
       }
     });
-    console.log('End Init Objects. Number of levels found: ' + this._levels.length);
+    this._log('End Init Objects. Number of levels found: ' + this._levels.length);
   }
 
   private _setVisibleLevel(level: number) {
@@ -2014,7 +2043,7 @@ export class Hass3dFloorplan extends LitElement {
     ev.stopPropagation();
     this._setSelectionMaterials(false);
     this._selectedobjects = [];
-    console.log('Cleared selected objects');
+    this._log('Cleared selected objects');
     render(this._getSelectionBar(), this._selectionbar);
   }
 
@@ -2083,7 +2112,7 @@ export class Hass3dFloorplan extends LitElement {
 
   private _getOverlay(): void {
     if (this._config.overlay == 'yes') {
-      console.log('Start config Overlay');
+      this._log('Start config Overlay');
       const overlay = document.createElement('div');
       overlay.id = 'overlay';
       overlay.className = 'overlay';
@@ -2146,7 +2175,7 @@ export class Hass3dFloorplan extends LitElement {
       try {
         zindex = this._getZIndex(this._renderer.domElement.parentNode);
       } catch (error) {
-        console.log(error);
+        console.warn('hass-3d-floorplan: could not compute overlay z-index', error);
       }
 
       if (zindex) {
@@ -2158,7 +2187,7 @@ export class Hass3dFloorplan extends LitElement {
       (this._renderer.domElement.parentNode as HTMLElement).style.setProperty('position', 'relative');
       this._renderer.domElement.parentNode.appendChild(overlay);
       this._overlay = overlay;
-      console.log('End config Overlay');
+      this._log('End config Overlay');
     }
   }
 
@@ -2216,7 +2245,7 @@ export class Hass3dFloorplan extends LitElement {
 
   private _onLoaded3DMaterials(materials: MTLLoader.MaterialCreator): void {
     // Materials Loaded Event: last root material passed to the function
-    console.log('Material loaded start');
+    this._log('Material loaded start');
     materials.preload();
     let path = this._config.path;
     const lastChar = path.substr(-1);
@@ -2233,13 +2262,13 @@ export class Hass3dFloorplan extends LitElement {
         throw new Error(error.error);
       },
     );
-    console.log('Material loaded end');
+    this._log('Material loaded end');
   }
 
   private _add3dObjects(): void {
     try {
       // Add-Modify the objects bound to the entities in the card config
-      console.log('Add Objects Start');
+      this._log('Add Objects Start');
       if (this._states && this._config.entities) {
         this._round_per_seconds = [];
         this._axis_to_rotate = [];
@@ -2300,7 +2329,7 @@ export class Hass3dFloorplan extends LitElement {
                 }
 
                 if (entity.door.doortype == 'swing') {
-                  // console.log("Start Add Door Swing");
+                  // this._log("Start Add Door Swing");
                   let position = new THREE.Vector3();
                   if (entity.door.hinge) {
                     let hinge: THREE.Mesh = this._scene.getObjectByName(entity.door.hinge) as THREE.Mesh;
@@ -2404,11 +2433,11 @@ export class Hass3dFloorplan extends LitElement {
                     );
                   });
 
-                  // console.log("End Add Door Swing");
+                  // this._log("End Add Door Swing");
                 }
                 if (entity.door.doortype == 'slide') {
                   // if (entity.door.doortype == 'slide') {
-                  // console.log("Start Add Door Slide");
+                  // this._log("Start Add Door Slide");
 
                   this._object_ids[i].objects.forEach((element) => {
                     let _obj: any = this._scene.getObjectByName(element.object_id);
@@ -2420,7 +2449,7 @@ export class Hass3dFloorplan extends LitElement {
                     );
                   });
 
-                  // console.log("End Add Door Slide");
+                  // this._log("End Add Door Slide");
                 }
               }
               if (entity.type3d == 'cover') {
@@ -2642,7 +2671,7 @@ export class Hass3dFloorplan extends LitElement {
               }
             }
           } catch (error) {
-            console.log(error);
+            console.error('hass-3d-floorplan: object issue for entity <' + entity.entity + '>', error);
             throw new Error('Object issue for Entity: <' + entity.entity + '> ' + error);
           }
         });
@@ -2670,9 +2699,9 @@ export class Hass3dFloorplan extends LitElement {
           }
         });
       }
-      console.log('Add 3D Object End');
+      this._log('Add 3D Object End');
     } catch (e) {
-      console.log(e);
+      console.error('hass-3d-floorplan: error adding 3D object', e);
       throw new Error('Error adding 3D Object: ' + e);
     }
   }
@@ -2736,7 +2765,7 @@ export class Hass3dFloorplan extends LitElement {
   private _createroom(entity: Hass3dFloorplanConfig, i: number): void {
     // createroom
 
-    console.log('Create Room');
+    this._log('Create Room');
 
     const elevation: number = entity.room.elevation ? entity.room.elevation : 250;
     const transparency: number = entity.room.transparency ? entity.room.transparency : 50;
@@ -3082,7 +3111,7 @@ export class Hass3dFloorplan extends LitElement {
 
   private _updatedoor(entity: Hass3dFloorplanConfig, i: number): void {
     // perform action on door objects
-    // console.log("Update Door Start");
+    // this._log("Update Door Start");
 
     const _obj: any = this._scene.getObjectByName(this._object_ids[i].objects[0].object_id);
 
@@ -3122,7 +3151,7 @@ export class Hass3dFloorplan extends LitElement {
       }
     }
     this._renderer.shadowMap.needsUpdate = true;
-    // console.log("Update Door End");
+    // this._log("Update Door End");
   }
 
   private _centerobjecttopivot(object: THREE.Mesh, pivot: THREE.Vector3) {
@@ -3133,7 +3162,7 @@ export class Hass3dFloorplan extends LitElement {
   }
 
   private _rotatedoorpivot(entity: Hass3dFloorplanConfig, index: number) {
-    // console.log("Rotate Door Start");
+    // this._log("Rotate Door Start");
 
     //For a swing door, rotate the objects along the configured axis and the degrees of opening
     this._object_ids[index].objects.forEach((element) => {
@@ -3180,11 +3209,11 @@ export class Hass3dFloorplan extends LitElement {
       this._startOrStopAnimationLoop();
     });
 
-    // console.log("Rotate Door End");
+    // this._log("Rotate Door End");
   }
 
   private _translatedoor(pane: THREE.Object3D, percentage: number, side: string, index: number, doorstate: string) {
-    // console.log("Translate Door Start");
+    // this._log("Translate Door Start");
     //For a slide door, translate the objects according to the configured directions and percentage of opening
 
     let translate: THREE.Vector3 = new THREE.Vector3(0, 0, 0);
@@ -3255,7 +3284,7 @@ export class Hass3dFloorplan extends LitElement {
     });
 
     this._startOrStopAnimationLoop();
-    // console.log("Translate Door End");
+    // this._log("Translate Door End");
   }
 
   private _updateroomcolor(item: any, index: number): void {

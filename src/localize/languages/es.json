@@ -3,6 +3,10 @@
     "version": "Versión",
     "invalid_configuration": "Configuración no válida",
     "show_warning": "Mostrar advertencia",
-    "show_error": "Mostrar error"
+    "show_error": "Mostrar error",
+    "loading": "Cargando",
+    "finishing": "Finalizando",
+    "error_loading": "Error al cargar el modelo: consulte el registro de la consola",
+    "error_parsing": "Error al procesar el modelo: consulte el registro de la consola"
   }
 }

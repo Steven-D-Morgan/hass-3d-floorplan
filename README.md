@@ -111,6 +111,7 @@ The GLB file is self-contained so you only need that one file to load the model.
 | max_pixel_ratio  | float  | 2            | cap on the device pixel ratio used for rendering. Phones report 3+, which is expensive for little visual gain; lower to 1 or 1.5 for faster rendering on weak devices      |
 | model_cache      | string | 'yes'        | cache the model file on the device for instant repeat loads (needs HTTPS; updates are picked up in the background — see [Mobile performance](#mobile-performance))         |
 | draco_decoder_path | string | see desc   | URL of the Draco decoder for Draco-compressed .glb files. Default: `https://www.gstatic.com/draco/versioned/decoders/1.5.6/`. Self-host and set this for offline setups   |
+| debug            | string | no           | 'yes' to print verbose loading/lifecycle logs to the browser console. Off by default; warnings and errors are always shown                                                 |
 
 **Note on sky:** When using sky, the sun going above the ceiling can cause strange illumination. Place a transparent slab object (transparent box) on top of your floor named `transparent_slab*` to block sunlight from above. You can also activate the ceiling in SweetHome3D.
 
@@ -426,6 +427,24 @@ If rendering is slow, ensure your browser is using your dedicated GPU:
 - **Firefox**: NVIDIA Control Panel > 3D Settings > Program Settings > Mozilla Firefox > High performance NVIDIA. In Firefox, set `webgl.disable-angle` to `true` in `about:config`.
 - **Chrome**: NVIDIA Control Panel > 3D Settings > Program Settings > Google Chrome > High performance NVIDIA. In Chrome, set `chrome://flags/#use-angle` to OpenGL.
 - **Edge**: NVIDIA Control Panel > 3D Settings > Program Settings > Edge > High performance NVIDIA. Set `edge://flags/#use-angle` to OpenGL.
+
+## Development
+
+```bash
+npm install
+npm run build      # lint + bundle to dist/hass-3d-floorplan.js
+npm start          # watch build with a dev server on :5000
+```
+
+### Tests
+
+A headless smoke test boots the built card against a stubbed Home Assistant, loads a real GLB, and asserts the model actually renders to the WebGL canvas (guarding the full fetch → cache → parse → render pipeline).
+
+```bash
+npm test
+```
+
+This rebuilds `dist/`, generates a throwaway model fixture, and runs Playwright against headless Chromium. The same job runs in CI on every push and pull request. The browser test harness lives in [`dev/`](dev/) and is handy for reproducing rendering issues outside a full Home Assistant install.
 
 ## License
 
