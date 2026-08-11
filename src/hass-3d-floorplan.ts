@@ -1,6 +1,6 @@
 ﻿/* eslint-disable @typescript-eslint/ban-types */
 import { LitElement, html, TemplateResult, css, PropertyValues, CSSResultGroup, render } from 'lit';
-import { property, customElement, state } from 'lit/decorators';
+import { property, customElement, state } from 'lit/decorators.js';
 import {
   HomeAssistant,
   ActionHandlerEvent,

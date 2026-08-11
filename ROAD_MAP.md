@@ -100,6 +100,17 @@ _The single-file constraint is on the bundle, not the source — these are "free
 
 ---
 
+## 🧹 Dependency Hygiene
+
+The CI log is noisy with deprecations and `npm audit` reports vulnerabilities. Key framing: **almost all of it is build-time devDependencies** — none of it ships to users, so it's build-chain hygiene and CI-vuln surface, not a runtime risk to installed cards. The 2 critical audit findings are in the build-time babel tree (`@babel/traverse` runs on our own source), not in any runtime dep (`three`/`lit`/mwc). Tackle in tiers:
+
+- [x] **Migrate to scoped Rollup plugins + drop unused devDeps** `med · small` — _done (v2.4.2-rc1)._ `rollup-plugin-{terser,node-resolve,commonjs,babel}` → `@rollup/plugin-*`; removed vestigial `@babel/plugin-proposal-{class-properties,decorators}` (no babel config references them; tsc handles decorators) and unused `check-dependencies`. Cut ~170 transitive packages and dropped vulns 28 → 22. Note: `@rollup/plugin-node-resolve@13` enforces the package `exports` field, which required changing `lit/decorators` imports to `lit/decorators.js` — verified via the smoke test.
+- [ ] **Commit a lockfile + `npm ci`** `high · small` — _the durable vuln fix._ Without a committed lockfile, `npm install` re-resolves every build, so `npm audit fix` results don't persist. Commit one lockfile, switch CI to `npm ci`, then `npm audit fix` sticks. (Also in **Next Up** — the same item.)
+- [ ] **eslint 7 → 8 + `@typescript-eslint` 4 → 8** `med · med` — clears the eslint-tree deprecations (`glob@7`, `@humanwhocodes/*`, `debug@4.1.1`) and most remaining high-severity audit findings (`ansi-regex`, `brace-expansion`). Stay on eslint **8** to keep the existing `.eslintrc.js`; eslint 9's flat config is a larger, separate migration.
+- [ ] **Bump the babel tree** `low · small` — `@babel/core`/`@babel/traverse`/`@babel/helpers` carry the 2 critical + a moderate build-time finding; they resolve to patched 7.x once the lockfile is committed and `npm audit fix` runs.
+- [ ] **`@material/mwc-*` → `@material/web`** `high · large` — the one hard cluster. These ~12 are **runtime** deps rendered in the editor and the button element, and `@material/web` has different element names/APIs/theming — a real editor rewrite. **Bundle into v3.0.0** alongside the three.js upgrade and the data-driven-editor refactor; don't do it in isolation.
+- [ ] **The `punycode` DEP0040 warning is cosmetic** — emitted by Node/transitive code, clears only as the whole tree modernizes. Ignore.
+
 ## 🛰️ Big Bets (major versions)
 
 - [ ] **three.js r130 → current** `med · large` — unlocks **KTX2 GPU-compressed textures** (the biggest *remaining* mobile load/VRAM lever now that geometry compression shipped) and worker-thread decoders. Real regression risk: r152's color-management default flip visibly shifts every existing user's colors unless `outputColorSpace`/tone-mapping is reconciled; `examples/jsm` import paths and some APIs change. Scope as **v3.0.0** with visual-regression baselines and a re-verified single-file bundle.

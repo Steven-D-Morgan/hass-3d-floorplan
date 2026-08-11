@@ -21,7 +21,7 @@
 > Based on [floor3d-card](https://github.com/adizanni/floor3d-card) by Andrea Di Zanni.
 
 <p align="center">
-  📓 <a href="RELEASE_NOTES.md">Release notes</a> · <a href="CHANGELOG.md">Changelog</a> · <a href="Road_Map.md">Road map</a>
+  📓 <a href="RELEASE_NOTES.md">Release notes</a> · <a href="CHANGELOG.md">Changelog</a> · <a href="ROAD_MAP.md">Road map</a>
 </p>
 
 ## Installation
