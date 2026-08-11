@@ -137,7 +137,7 @@ For each entity in the entities list:
 | Name            | Type   | Default      | Description                                                                                                                                                                                                                                                                                         |
 | --------------- | ------ | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | entity          | string | **Required** | your entity ID or reference to an object_group via `<object_group>` reference                                                                                                                                                                                                                       |
-| entity_template | string | none         | a JavaScript template: `[[[ template]]]`. Use `$entity` for the entity state                                                                                                                                                                                                                        |
+| entity_template | string | none         | a JavaScript **expression** wrapped in `[[[ ... ]]]`, evaluated to compute the state. `$entity` is bound to the entity state (a number when the state is numeric, otherwise a string) — use it directly, e.g. `[[[ $entity > 25 ? "hot" : "cool" ]]]`. Must be a single expression (use `? :`, not `if/else` blocks). |
 | action          | string | none         | on-click behavior: 'more-info', 'overlay', or 'default'                                                                                                                                                                                                                                            |
 | object_id       | string | **Required** | the name of the object in the model to bind to your entity                                                                                                                                                                                                                                          |
 | type3d          | string | **Required** | the type of binding: light, hide, show, color, text, gesture, door, cover, rotate, room, camera                                                                                                                                                                                                     |
@@ -171,8 +171,10 @@ For each entity in the entities list:
     - color: red
       state: hot
   object_id: your_object
-  entity_template: '[[[ if ($entity > 25) { "hot" } else { "cool" } ]]]'
+  entity_template: '[[[ $entity > 25 ? "hot" : "cool" ]]]'
 ```
+
+> **Note (v2.4.1):** templates are now sandboxed JavaScript **expressions** — `$entity` is passed in as a bound value, not string-substituted into code, which closes a script-injection hole and lets string states work without quoting. Rewrite any old statement-style template (`[[[ if ($entity > 25) { "hot" } else { "cool" } ]]]`) as an expression using the ternary operator (`[[[ $entity > 25 ? "hot" : "cool" ]]]`).
 
 ## Camera Rotation, Camera Position and Camera direction
 

@@ -135,6 +135,9 @@ export class Hass3dFloorplan extends LitElement {
   _helper: THREE.DirectionalLightHelper;
   private _modelready: boolean;
   private _maxtextureimage: number;
+  private _availableshadows: number;
+  private _shadowLightCount: number;
+  private _tearingDown: boolean;
   private _dracoLoader?: DRACOLoader;
 
   constructor() {
@@ -407,6 +410,21 @@ export class Hass3dFloorplan extends LitElement {
       throw new Error(localize('common.invalid_configuration'));
     }
 
+    // Validate the required model references up front so a missing/mistyped file
+    // surfaces as Home Assistant's tidy config-error card instead of an uncaught
+    // throw deep inside the async loader.
+    const invalid = localize('common.invalid_configuration');
+    if (!config.path || config.path.trim() === '') {
+      throw new Error(invalid + ': "path" is required');
+    }
+    if (!config.objfile || config.objfile.trim() === '') {
+      throw new Error(invalid + ': "objfile" is required');
+    }
+    const ext = config.objfile.split('?')[0].split('.').pop();
+    if (ext !== 'obj' && ext !== 'glb') {
+      throw new Error(invalid + ': "objfile" must be a .obj or .glb file');
+    }
+
     this._config = config;
     this._configArray = createConfigArray(this._config);
     this._object_ids = createObjectGroupConfigArray(this._config);
@@ -450,12 +468,67 @@ export class Hass3dFloorplan extends LitElement {
     this._resizeObserver.disconnect();
     this._stopVisibilityWatch();
 
+    // Release GPU resources and the old WebGL context before building a new one.
+    // The editor calls rerender() on every config change, so without this each
+    // edit would leak a context until the browser force-drops the oldest (~16 cap),
+    // blanking other floorplan cards on the dashboard.
+    this._teardownScene();
+
     this._renderer.domElement.remove();
     this._renderer = null;
 
     this._states = null;
     this.hass = this._hass;
     this.display3dmodel();
+  }
+
+  private _disposeMaterial(material: any): void {
+    if (!material) return;
+    const maps = [
+      'map',
+      'lightMap',
+      'aoMap',
+      'emissiveMap',
+      'bumpMap',
+      'normalMap',
+      'specularMap',
+      'envMap',
+      'alphaMap',
+      'roughnessMap',
+      'metalnessMap',
+    ];
+    maps.forEach((key) => {
+      if (material[key] && material[key].dispose) material[key].dispose();
+    });
+    if (material.dispose) material.dispose();
+  }
+
+  // Dispose the scene's GPU resources and the renderer/controls. Scoped to
+  // rerender()/explicit destroy — NOT disconnectedCallback, because Home
+  // Assistant disconnects and reconnects cards when switching views, and
+  // tearing down there would blank the card on every view change.
+  private _teardownScene(): void {
+    this._tearingDown = true;
+    try {
+      if (this._scene) {
+        this._scene.traverse((obj: any) => {
+          if (obj.geometry && obj.geometry.dispose) obj.geometry.dispose();
+          if (obj.material) {
+            if (Array.isArray(obj.material)) obj.material.forEach((m: any) => this._disposeMaterial(m));
+            else this._disposeMaterial(obj.material);
+          }
+        });
+      }
+      if (this._controls && this._controls.dispose) this._controls.dispose();
+      if (this._renderer) {
+        this._renderer.dispose();
+        this._renderer.forceContextLoss();
+      }
+    } catch (err) {
+      console.warn('hass-3d-floorplan: scene teardown failed', err);
+    } finally {
+      this._tearingDown = false;
+    }
   }
 
   private _ispanel(): boolean {
@@ -901,11 +974,16 @@ export class Hass3dFloorplan extends LitElement {
         const trimmed = entity.entity_template.trim();
 
         if (trimmed.substring(0, 3) === '[[[' && trimmed.slice(-3) === ']]]' && trimmed.includes('$entity')) {
-          const normal = trimmed.slice(3, -3).replace(/\$entity/g, state);
+          const expr = trimmed.slice(3, -3);
           try {
-            // new Function instead of raw eval: same dynamic evaluation of the
-            // author's template, but without capturing this method's local scope.
-            state = new Function('return (' + normal + ');')();
+            // Bind the live state as DATA (a bound parameter named $entity), never
+            // substitute it into the code string. This prevents a crafted entity
+            // state from executing as JS in the dashboard origin, and lets string
+            // states evaluate without the author having to quote them. Numeric-
+            // looking states are passed as numbers so existing arithmetic/threshold
+            // templates (e.g. `$entity * 2`, `$entity > 25`) behave exactly as before.
+            const numeric = state !== '' && !isNaN(Number(state));
+            state = new Function('$entity', 'return (' + expr + ');')(numeric ? Number(state) : state);
           } catch (err) {
             console.warn('hass-3d-floorplan: entity_template evaluation failed for <' + entity.entity + '>', err);
           }
@@ -990,12 +1068,13 @@ export class Hass3dFloorplan extends LitElement {
                 this._rooms.push('');
                 this._sprites.push('');
               }
-              if (entity.type3d == 'cover') {
-                if (hass.states[entity.entity].attributes['current_position']) {
-                  this._position.push(hass.states[entity.entity].attributes['current_position']);
-                } else {
-                  this._position.push(null);
-                }
+              // Push one _position slot per entity (not only per cover) so the
+              // array stays index-aligned with this._config.entities; otherwise a
+              // cover that isn't at a leading index reads undefined -> NaN.
+              if (entity.type3d == 'cover' && hass.states[entity.entity].attributes['current_position']) {
+                this._position.push(hass.states[entity.entity].attributes['current_position']);
+              } else {
+                this._position.push(null);
               }
               if (entity.type3d == 'light') {
                 this._lights.push(entity.object_id + '_light');
@@ -1015,6 +1094,22 @@ export class Hass3dFloorplan extends LitElement {
               }
             } else {
               this._log('Entity <' + entity.entity + '> not found');
+              // Push placeholders so every per-entity array stays index-aligned
+              // with this._config.entities even when an entity is missing at boot
+              // (renamed, unavailable, or a slow-to-start integration). Without
+              // this, every later entity's bindings shift by one slot permanently.
+              // The entity binds normally in the update path once it appears.
+              this._states.push('');
+              this._canvas.push(null);
+              this._unit_of_measurement.push('');
+              this._text.push('');
+              this._spritetext.push('');
+              this._rooms.push('');
+              this._sprites.push('');
+              this._position.push(null);
+              this._lights.push('');
+              this._color.push([255, 255, 255]);
+              this._brightness.push(-1);
             }
           });
           this._firstcall = false;
@@ -1226,12 +1321,19 @@ export class Hass3dFloorplan extends LitElement {
     const sun = new THREE.Vector3();
     this._scene.add(this._sun);
 
-    if (this._hass.states['sun.sun'].attributes['azimuth']) {
-      effectController.azimuth = Number(this._hass.states['sun.sun'].attributes['azimuth']);
-    }
-
-    if (this._hass.states['sun.sun'].attributes['elevation']) {
-      effectController.elevation = Number(this._hass.states['sun.sun'].attributes['elevation']);
+    // The Sun integration may be absent (it is not guaranteed on every install).
+    // Guard the entity itself, not just the attribute, and fall back to the
+    // default elevation/azimuth so sky: yes doesn't throw inside the loader.
+    const sunState = this._hass.states['sun.sun'];
+    if (sunState) {
+      if (sunState.attributes['azimuth']) {
+        effectController.azimuth = Number(sunState.attributes['azimuth']);
+      }
+      if (sunState.attributes['elevation']) {
+        effectController.elevation = Number(sunState.attributes['elevation']);
+      }
+    } else {
+      console.warn("hass-3d-floorplan: sky enabled but 'sun.sun' entity not found; using default sun position");
     }
 
     let south: THREE.Vector3;
@@ -1366,14 +1468,20 @@ export class Hass3dFloorplan extends LitElement {
     this._log('Max Texture Image Units: ' + this._maxtextureimage);
     this._log('Max Texture Image Units: number of lights casting shadow should be less than the above number');
 
-    const availableshadows = Math.max(6, this._maxtextureimage - 4);
+    // Budget of shadow-casting lights: each shadow map consumes a texture unit,
+    // and exceeding maxTextures corrupts rendering. Enforced in _add3dObjects.
+    this._availableshadows = Math.max(6, this._maxtextureimage - 4);
 
     // Mobile browsers evict WebGL contexts under memory pressure. three re-inits
     // the GL state on restore, but this card only renders on demand, so without
     // this the canvas would stay blank until the next interaction.
     this._renderer.domElement.addEventListener('webglcontextlost', (evt: Event) => {
       evt.preventDefault();
-      console.warn('hass-3d-floorplan: WebGL context lost; waiting for restore');
+      // Skip the warning during an intentional teardown (rerender/destroy calls
+      // forceContextLoss); only real, unexpected losses should be surfaced.
+      if (!this._tearingDown) {
+        console.warn('hass-3d-floorplan: WebGL context lost; waiting for restore');
+      }
     });
     this._renderer.domElement.addEventListener('webglcontextrestored', () => {
       this._log('hass-3d-floorplan: WebGL context restored; re-rendering');
@@ -2285,6 +2393,7 @@ export class Hass3dFloorplan extends LitElement {
         this._slidingdoorposition = [];
         this._to_animate = false;
         this._zoom = [];
+        this._shadowLightCount = 0;
 
         this._config.entities.forEach((entity, i) => {
           try {
@@ -2631,11 +2740,23 @@ export class Hass3dFloorplan extends LitElement {
                     this._setNoShadowLight(_foundobject);
                     _foundobject.traverseAncestors(this._setNoShadowLight.bind(this));
 
-                    if (entity.light.shadow == 'no') {
+                    // Each shadow-casting light consumes a texture unit; exceeding
+                    // maxTextures corrupts rendering, so cap the number that cast
+                    // shadows to the budget computed at renderer creation.
+                    if (entity.light.shadow == 'no' || this._shadowLightCount >= this._availableshadows) {
+                      if (entity.light.shadow != 'no' && this._shadowLightCount === this._availableshadows) {
+                        console.warn(
+                          'hass-3d-floorplan: shadow-casting light limit (' +
+                            this._availableshadows +
+                            ') reached; remaining lights will not cast shadows',
+                        );
+                        this._shadowLightCount++; // advance past the limit so this warns only once
+                      }
                       light.castShadow = false;
                     } else {
                       light.castShadow = true;
                       light.shadow.bias = -0.0001;
+                      this._shadowLightCount++;
                     }
                     light.name = element.object_id + '_light';
                   }
@@ -2962,14 +3083,27 @@ export class Hass3dFloorplan extends LitElement {
     let fileExt = this._config.objfile.split('?')[0].split('.').pop();
 
     if (_foundobject instanceof THREE.Mesh) {
+      const mat = (_foundobject as THREE.Mesh).material as THREE.MeshBasicMaterial;
+      const existingMap: any = mat && mat.map;
+
+      // Updates repaint the SAME canvas, so if the material already carries a
+      // CanvasTexture backed by that canvas we just re-upload it. Minting a new
+      // texture every update (the old behaviour) orphaned the previous one with
+      // no dispose() — a GPU-memory leak on every sensor tick.
+      if (existingMap instanceof THREE.CanvasTexture && existingMap.image === canvas) {
+        existingMap.needsUpdate = true;
+        return;
+      }
+
       const texture = new THREE.CanvasTexture(canvas);
       texture.repeat.set(1, 1);
 
       if (fileExt == 'glb') {
         texture.flipY = false;
       }
-      if (((_foundobject as THREE.Mesh).material as THREE.MeshBasicMaterial).name.startsWith('f3dmat')) {
-        ((_foundobject as THREE.Mesh).material as THREE.MeshBasicMaterial).map = texture;
+      if (mat && mat.name.startsWith('f3dmat')) {
+        if (existingMap && existingMap.dispose) existingMap.dispose();
+        mat.map = texture;
       } else {
         const material = new THREE.MeshBasicMaterial({
           map: texture,
@@ -2985,10 +3119,21 @@ export class Hass3dFloorplan extends LitElement {
   private _applyTextCanvasSprite(canvas: HTMLCanvasElement, object: THREE.Sprite) {
     // put the canvas texture with the text on top of the Sprite object: consider merge with the applyTextCanvas
 
+    const mat: any = object.material;
+    const existingMap: any = mat && mat.map;
+
+    // Reuse the CanvasTexture across room-label updates rather than leaking one
+    // per update (see _applyTextCanvas).
+    if (existingMap instanceof THREE.CanvasTexture && existingMap.image === canvas) {
+      existingMap.needsUpdate = true;
+      return;
+    }
+
     const texture = new THREE.CanvasTexture(canvas);
     texture.repeat.set(1, 1);
 
-    if (object.material.name.startsWith('f3dmat')) {
+    if (mat && mat.name.startsWith('f3dmat')) {
+      if (existingMap && existingMap.dispose) existingMap.dispose();
       (object.material as THREE.SpriteMaterial).map = texture;
     } else {
       const material = new THREE.SpriteMaterial({
