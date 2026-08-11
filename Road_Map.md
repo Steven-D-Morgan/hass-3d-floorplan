@@ -10,7 +10,7 @@ Most items came from a multi-perspective code audit (Aug 2026); the rest are add
 
 ---
 
-## ✅ Recently shipped (for context)
+## ✅ Recently Shipped (for context)
 
 - **v2.3.0** — Draco/meshopt compressed GLB, on-device model caching + revalidation, mobile pixel-ratio cap, high-performance WebGL hint.
 - **v2.3.1** — light color/brightness comparison bug, event-driven visibility (IntersectionObserver + visibilitychange), WebGL context-loss recovery.
@@ -19,7 +19,7 @@ Most items came from a multi-perspective code audit (Aug 2026); the rest are add
 
 ---
 
-## 🎯 Next up — quick wins (small effort, high value)
+## 🎯 Next Up
 
 Do these first: all are small, and together they would have *caught* several bugs already fixed by hand.
 
@@ -48,7 +48,7 @@ Do these first: all are small, and together they would have *caught* several bug
 
 ---
 
-## 🩹 Correctness & robustness (remaining)
+## 🩹 Correctness & Robustness (remaining)
 
 - [ ] **Route OBJ/MTL load failures through `_showError` + share the model cache** `med · med` — the OBJ path still `throw`s inside async loader callbacks (often "Error: undefined"), never wires to the existing `_onLoadError`, and gets none of the GLB path's on-device caching.
 - [ ] **Load-generation token** `med · med` — `rerender()` re-enters `display3dmodel()` without cancelling an in-flight fetch/parse; a stale `onLoad` can re-add duplicate lights/objects or touch a nulled renderer. Increment a `_loadToken` and bail stale callbacks.
@@ -56,7 +56,7 @@ Do these first: all are small, and together they would have *caught* several bug
 
 ---
 
-## 🏗️ Architecture & tech debt
+## 🏗️ Architecture & Tech Debt
 
 _The single-file constraint is on the bundle, not the source — these are "free" at distribution time; the cost is diff size/review risk. Land incrementally._
 
@@ -68,7 +68,7 @@ _The single-file constraint is on the bundle, not the source — these are "free
 
 ---
 
-## 🔐 Security & supply chain (non-injection)
+## 🔐 Security & Supply Chain (non-injection)
 
 - [ ] **Bundle the Draco decoder locally** `med · med` — `draco_decoder_path` defaults to gstatic; `DRACOLoader` fetches *and executes* JS+WASM from that origin with no SRI (remote-code dependency + privacy beacon of the user's IP to Google on every compressed-model load + offline breakage). Bundle it and default to a path relative to the card's own URL; keep the override.
 - [ ] **Document the `unsafe-eval` requirement + surface template failures** `low · small` — even after the injection fix, `new Function` needs `script-src 'unsafe-eval'`; a hardened proxy makes templates throw silently. Document it and add a debug-gated failure indicator.
@@ -88,7 +88,7 @@ _The single-file constraint is on the bundle, not the source — these are "free
 
 ---
 
-## ✨ Additional suggestions _(added — beyond the audit)_
+## ✨ Additional Suggestions _(added — beyond the audit)_
 
 - [ ] **Performance/debug HUD** `med · small` — with `debug: yes`, overlay `renderer.info` (draw calls, triangles, textures, geometries) + FPS so users can diagnose slow models themselves. Extends the existing debug option.
 - [ ] **Respect `prefers-reduced-motion`** `low · small` — pause `rotate` animations for users who set the OS reduced-motion preference (accessibility + battery).
@@ -100,7 +100,7 @@ _The single-file constraint is on the bundle, not the source — these are "free
 
 ---
 
-## 🛰️ Big bets (major versions)
+## 🛰️ Big Bets (major versions)
 
 - [ ] **three.js r130 → current** `med · large` — unlocks **KTX2 GPU-compressed textures** (the biggest *remaining* mobile load/VRAM lever now that geometry compression shipped) and worker-thread decoders. Real regression risk: r152's color-management default flip visibly shifts every existing user's colors unless `outputColorSpace`/tone-mapping is reconciled; `examples/jsm` import paths and some APIs change. Scope as **v3.0.0** with visual-regression baselines and a re-verified single-file bundle.
 - [ ] **`zip_release` migration + real lazy editor** `med · med` — the editor is ~28% of the bundle and evaluated for every viewer because a static `import './editor'` defeats the lazy `getConfigElement()` import. Migrating `hacs.json` to `zip_release` enables a genuine lazy chunk. Changes the distributed asset — update README + release workflow in lockstep.
