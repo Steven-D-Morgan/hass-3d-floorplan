@@ -109,8 +109,9 @@ The CI log is noisy with deprecations and `npm audit` reports vulnerabilities. K
 - [x] **eslint 7 → 9 + flat config + `typescript-eslint` 8** `med · med` — _done (v2.4.2-rc2)._ Went to eslint **9** (not 8, which is itself now EOL): new `eslint.config.js`, deleted `.eslintrc.js`, removed unused `eslint-config-airbnb-base`/`eslint-plugin-import`/`eslint-plugin-prettier`/`eslint-config-prettier`. Fixed the fallout (`ban-types` rule removed in typescript-eslint 8; two real no-op statements flagged by `no-unused-expressions`).
 - [x] **Drop `custom-card-helpers`** `med · med` — _done (v2.4.2-rc2)._ Vendored the ~8 used types + a local `fireEvent` in `src/ha.ts`; removed the dead `_handleAction` (its only user of `handleAction`). Kills the `@formatjs/intl-utils` deprecation and the `this`-rewrite build warning, and slims the shipped bundle.
 - [x] **Commit a lockfile + `npm ci` + CI lint/typecheck gates** `high · small` — _done (v2.4.2-rc2)._ Committed `package-lock.json`, removed the stale `yarn.lock`, switched all three workflows to `npm ci`, and added `npm run lint` + `npm run typecheck` gates to the build workflow.
+- [x] **Bump `@rollup/plugin-commonjs` 21 → 29** `low · small` — _done (v2.4.2-rc4)._ v21 was the **sole** parent of three deprecated transitives: `glob@7` (unsupported, carries advisories), `inflight` (memory leak; pulled only by `glob@7`), and `sourcemap-codec` (superseded by `@jridgewell/sourcemap-codec`). v29 uses `fdir`/`picomatch` instead of `glob` and `magic-string@0.30` (which pulls `@jridgewell/sourcemap-codec`), still declares `rollup ^2.68` as a peer, so it resolves against the existing rollup 2 with no conflict. Lockfile −8/+4 packages; build/lint/typecheck verified. Leaves only the mwc cluster (below) and the runner-side `punycode` line.
 - [ ] **`@material/mwc-*` → `@material/web`** `high · large` — the one hard cluster left. These ~12 are **runtime** deps rendered in the editor and the button element, and `@material/web` has different element names/APIs/theming — a real editor rewrite. **Bundle into v3.0.0** alongside the three.js upgrade and the data-driven-editor refactor; don't do it in isolation.
-- [ ] **Remaining audit findings** `low · small` — after the above, `npm audit` is down to ~5 (from 28), all build-time. The last critical is in the babel tree; `npm audit fix` on the committed lockfile clears the non-breaking ones. `glob@7` + `punycode` DEP0040 are cosmetic/transitive — ignore.
+- [ ] **Remaining audit findings** `low · small` — `npm audit` sits at 5 (from 28), all build-time (babel/terser tree, run over our own source — not shipped to users). The last critical is in the babel tree; `npm audit fix` on the committed lockfile clears the non-breaking ones. With the plugin-commonjs bump done, the only non-mwc deprecation left in CI is `punycode` DEP0040 — emitted by the GitHub Actions runner tooling (`setup-node` / `upload-release-action` on Node 20), not this repo; cosmetic, clears upstream.
 
 ## 🛰️ Big Bets (major versions)
 
@@ -119,4 +120,4 @@ The CI log is noisy with deprecations and `npm audit` reports vulnerabilities. K
 
 ---
 
-_Last updated: 2026-08-11 (post v2.4.1). Ratings are guidance, not gospel — revisit as the code changes._
+_Last updated: 2026-08-17 (v2.4.2-rc4 prep). Ratings are guidance, not gospel — revisit as the code changes._
