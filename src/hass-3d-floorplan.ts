@@ -7,7 +7,7 @@ import { createConfigArray, createObjectGroupConfigArray, getLovelace } from './
 import type { Hass3dFloorplanConfig } from './types';
 import { CARD_VERSION } from './const';
 import { localize } from './localize/localize';
-//import three.js libraries for 3D rendering
+
 import * as TWEEN from '@tweenjs/tween.js';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
@@ -20,14 +20,14 @@ import { Sky } from 'three/examples/jsm/objects/Sky';
 import { Object3D } from 'three';
 import '../elements/button';
 
-/* eslint no-console: 0 */
+
 console.info(
   `%c  HASS-3D-FLOORPLAN \n%c  ${localize('common.version')} ${CARD_VERSION}    `,
   'color: orange; font-weight: bold; background: black',
   'color: white; font-weight: bold; background: dimgray',
 );
 
-// This puts your card into the UI card picker dialog
+
 (window as any).customCards = (window as any).customCards || [];
 (window as any).customCards.push({
   type: 'hass-3d-floorplan',
@@ -40,7 +40,7 @@ class ModelSource {
   public static GLB = 1;
 }
 
-// TODO Name your custom element
+
 @customElement('hass-3d-floorplan')
 export class Hass3dFloorplan extends LitElement {
   private _scene?: THREE.Scene;
@@ -154,7 +154,7 @@ export class Hass3dFloorplan extends LitElement {
         this._longpressTimeout = null;
       }
 
-      // Handle mouse click events that are less than 200ms in duration
+      
       if (this._clickStart && Date.now() - this._clickStart < 200) {
         if (this._config.click == 'yes' || this._selectionModeEnabled) {
           this._firEvent(evt);
@@ -176,8 +176,6 @@ export class Hass3dFloorplan extends LitElement {
     this._log('New Card');
   }
 
-  // Informational logging, silenced unless `debug: yes` is set in the card config.
-  // Warnings and errors always use console.warn/console.error directly.
   private _log(...args: any[]): void {
     if (this._config && this._config.debug == 'yes') {
       console.log(...args);
@@ -228,13 +226,13 @@ export class Hass3dFloorplan extends LitElement {
     const entityFilter = (stateObj: HassEntity): boolean => {
       return !isNaN(Number(stateObj.state));
     };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    
     const _arrayFilter = (array: any[], conditions: Array<(value: any) => boolean>, maxSize: number) => {
       if (!maxSize || maxSize > array.length) {
         maxSize = array.length;
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      
       const filteredArray: any[] = [];
 
       for (let i = 0; i < array.length && filteredArray.length < maxSize; i++) {
@@ -266,7 +264,7 @@ export class Hass3dFloorplan extends LitElement {
       const conditions: Array<(value: string) => boolean> = [];
 
       if (includeDomains?.length) {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        
         conditions.push((eid) => includeDomains!.includes(eid.split('.')[0]));
       }
 
@@ -292,7 +290,7 @@ export class Hass3dFloorplan extends LitElement {
       return entityIds;
     };
 
-    //build a valid stub config
+    
 
     let includeDomains = ['binary_sensor'];
     let maxEntities = 2;
@@ -389,23 +387,20 @@ export class Hass3dFloorplan extends LitElement {
     return conf;
   }
 
-  // TODO Add any properities that should cause your element to re-render here
-  // https://lit-element.polymer-project.org/guide/properties
-  //@property({ attribute: false }) public hass!: HomeAssistant;
+  
+  
+  
   @state() private config!: Hass3dFloorplanConfig;
 
-  // https://lit-element.polymer-project.org/guide/properties#accessors-custom
+  
   public setConfig(config: Hass3dFloorplanConfig): void {
-    // TODO Check for required fields and that they are of the proper format
+    
     this._log('hass-3d-floorplan: Set Config Start');
 
     if (!config) {
       throw new Error(localize('common.invalid_configuration'));
     }
 
-    // Validate the required model references up front so a missing/mistyped file
-    // surfaces as Home Assistant's tidy config-error card instead of an uncaught
-    // throw deep inside the async loader.
     const invalid = localize('common.invalid_configuration');
     if (!config.path || config.path.trim() === '') {
       throw new Error(invalid + ': "path" is required');
@@ -461,10 +456,6 @@ export class Hass3dFloorplan extends LitElement {
     this._resizeObserver.disconnect();
     this._stopVisibilityWatch();
 
-    // Release GPU resources and the old WebGL context before building a new one.
-    // The editor calls rerender() on every config change, so without this each
-    // edit would leak a context until the browser force-drops the oldest (~16 cap),
-    // blanking other floorplan cards on the dashboard.
     this._teardownScene();
 
     this._renderer.domElement.remove();
@@ -496,10 +487,6 @@ export class Hass3dFloorplan extends LitElement {
     if (material.dispose) material.dispose();
   }
 
-  // Dispose the scene's GPU resources and the renderer/controls. Scoped to
-  // rerender()/explicit destroy — NOT disconnectedCallback, because Home
-  // Assistant disconnects and reconnects cards when switching views, and
-  // tearing down there would blank the card on every view change.
   private _teardownScene(): void {
     this._tearingDown = true;
     try {
@@ -538,8 +525,8 @@ export class Hass3dFloorplan extends LitElement {
     root = (root && root.shadowRoot) || root;
     root = root && root.querySelector('hui-view');
 
-    // The shadow-DOM path above can break if Home Assistant restructures its
-    // frontend; degrade to "not a panel" instead of throwing on a null root.
+    
+    
     if (!root) {
       return false;
     }
@@ -592,7 +579,7 @@ export class Hass3dFloorplan extends LitElement {
   getCardSize(): number {
     this._log('Get Card Size Called');
     if (this._renderer) {
-      //return this._renderer.domElement.height / 50;
+      
       return 10;
     } else {
       return 10;
@@ -600,7 +587,7 @@ export class Hass3dFloorplan extends LitElement {
   }
 
   firstUpdated(): void {
-    //called after the model has been loaded into the Renderer and first render
+    
     this._log('First updated start');
 
     this._card = this.shadowRoot.getElementById(this._card_id);
@@ -632,12 +619,12 @@ export class Hass3dFloorplan extends LitElement {
   }
 
   private _render(): void {
-    //render the model
+    
     if (this._torch) {
       this._torch.position.copy(this._camera.position);
       this._torch.rotation.copy(this._camera.rotation);
       this._camera.getWorldDirection(this._torch.target.position);
-      //this._log(this._renderer.info);
+      
     }
     this._renderer.render(this._scene, this._camera);
   }
@@ -652,7 +639,7 @@ export class Hass3dFloorplan extends LitElement {
     let offsetX: number | undefined = e?.offsetX;
     let offsetY: number | undefined = e?.offsetY;
 
-    // TouchEvent (iOS/Android) has no offsetX/offsetY â€” derive from the first touch point.
+    
     if (offsetX === undefined || offsetY === undefined) {
       const touch = e?.touches?.[0] || e?.changedTouches?.[0];
       if (touch) {
@@ -685,7 +672,7 @@ export class Hass3dFloorplan extends LitElement {
   }
 
   private _firEvent(e: any): void {
-    //double click on object to show the name
+    
     const intersects = this._getintersect(e);
     if (intersects.length > 0 && intersects[0].object.name != '') {
       if (this._selectionModeEnabled) {
@@ -721,12 +708,12 @@ export class Hass3dFloorplan extends LitElement {
     }
   }
 
-  // Hold down the mouse button on object
+  
   private _longPressEvent(_e: any): void {
     if (this._clickStart == null) return;
     this._clickStart = null;
 
-    // Use intersections from the mousedown event
+    
     const intersects = this._currentIntersections;
     this._currentIntersections = null;
     if (intersects.length > 0 && intersects[0].object.name != '') {
@@ -774,8 +761,8 @@ export class Hass3dFloorplan extends LitElement {
       this._log('Object:', objectName);
 
       if (this._selectionModeEnabled) {
-        // Color objects blue when we click them, so we can build a list of
-        // rooms and walls to control a light
+        
+        
         const object: any = intersects[0].object;
         if (!this._selectedmaterial) {
           const newMaterial: any = new THREE.MeshStandardMaterial({ color: 0x7777ff });
@@ -812,7 +799,7 @@ export class Hass3dFloorplan extends LitElement {
                 });
               } else if (entity.type3d == 'camera') {
                 fireEvent(this, 'hass-more-info', { entityId: entity.entity });
-                //this._hass.states[entity.entity].attributes["entity_picture"]
+                
               }
               break;
             }
@@ -854,9 +841,6 @@ export class Hass3dFloorplan extends LitElement {
     this._defaultaction(intersects);
   }
 
-  // Event-driven replacement for the old 250ms z-index polling: pause the
-  // animation loop when the card scrolls out of view or the page is hidden
-  // (app backgrounded), resume when it becomes visible again.
   private _startVisibilityWatch(): void {
     this._stopVisibilityWatch();
 
@@ -969,12 +953,6 @@ export class Hass3dFloorplan extends LitElement {
         if (trimmed.substring(0, 3) === '[[[' && trimmed.slice(-3) === ']]]' && trimmed.includes('$entity')) {
           const expr = trimmed.slice(3, -3);
           try {
-            // Bind the live state as DATA (a bound parameter named $entity), never
-            // substitute it into the code string. This prevents a crafted entity
-            // state from executing as JS in the dashboard origin, and lets string
-            // states evaluate without the author having to quote them. Numeric-
-            // looking states are passed as numbers so existing arithmetic/threshold
-            // templates (e.g. `$entity * 2`, `$entity > 25`) behave exactly as before.
             const numeric = state !== '' && !isNaN(Number(state));
             state = new Function('$entity', 'return (' + expr + ');')(numeric ? Number(state) : state);
           } catch (err) {
@@ -997,11 +975,11 @@ export class Hass3dFloorplan extends LitElement {
 
   public set hass(hass: HomeAssistant) {
     try {
-      //called by Home Assistant Lovelace when a change of state is detected in entities
+      
       this._hass = hass;
       if (this._config.entities) {
         if (!this._states) {
-          //prepares to save the state
+          
           this._states = [];
           this._unit_of_measurement = [];
           this._color = [];
@@ -1061,9 +1039,6 @@ export class Hass3dFloorplan extends LitElement {
                 this._rooms.push('');
                 this._sprites.push('');
               }
-              // Push one _position slot per entity (not only per cover) so the
-              // array stays index-aligned with this._config.entities; otherwise a
-              // cover that isn't at a leading index reads undefined -> NaN.
               if (entity.type3d == 'cover' && hass.states[entity.entity].attributes['current_position']) {
                 this._position.push(hass.states[entity.entity].attributes['current_position']);
               } else {
@@ -1087,11 +1062,6 @@ export class Hass3dFloorplan extends LitElement {
               }
             } else {
               this._log('Entity <' + entity.entity + '> not found');
-              // Push placeholders so every per-entity array stays index-aligned
-              // with this._config.entities even when an entity is missing at boot
-              // (renamed, unavailable, or a slow-to-start integration). Without
-              // this, every later entity's bindings shift by one slot permanently.
-              // The entity binds normally in the update path once it appears.
               this._states.push('');
               this._canvas.push(null);
               this._unit_of_measurement.push('');
@@ -1250,8 +1220,6 @@ export class Hass3dFloorplan extends LitElement {
               console.warn('hass-3d-floorplan: entity <' + entity.entity + '> not found');
             }
             } catch (entityError) {
-              // Isolate per-entity failures so one misconfigured binding does not
-              // stop every other entity's updates for the life of the card.
               console.error(
                 'hass-3d-floorplan: error updating entity <' + entity.entity + '>',
                 entityError,
@@ -1278,7 +1246,7 @@ export class Hass3dFloorplan extends LitElement {
       azimuth: 0,
     };
 
-    //init sky
+    
     this._log('Init Sky');
 
     this._sky = new Sky();
@@ -1291,7 +1259,7 @@ export class Hass3dFloorplan extends LitElement {
     uniforms['mieCoefficient'].value = effectController.mieCoefficient;
     uniforms['mieDirectionalG'].value = effectController.mieDirectionalG;
 
-    // init ground
+    
 
     this._log('Init Ground');
 
@@ -1303,10 +1271,10 @@ export class Hass3dFloorplan extends LitElement {
     ground.rotation.x = -Math.PI / 2;
     ground.receiveShadow = false;
     ground.castShadow = false;
-    //this._bboxmodel.add(ground);
+    
     this._scene.add(ground);
 
-    // inti sun
+    
 
     this._log('Init Sun');
 
@@ -1314,9 +1282,6 @@ export class Hass3dFloorplan extends LitElement {
     const sun = new THREE.Vector3();
     this._scene.add(this._sun);
 
-    // The Sun integration may be absent (it is not guaranteed on every install).
-    // Guard the entity itself, not just the attribute, and fall back to the
-    // default elevation/azimuth so sky: yes doesn't throw inside the loader.
     const sunState = this._hass.states['sun.sun'];
     if (sunState) {
       if (sunState.attributes['azimuth']) {
@@ -1365,7 +1330,7 @@ export class Hass3dFloorplan extends LitElement {
 
     this._sun.position.copy(sun.multiplyScalar(5000));
 
-    // sun directional light parameters
+    
     const d = 1000;
 
     this._sun.castShadow = true;
@@ -1382,7 +1347,7 @@ export class Hass3dFloorplan extends LitElement {
 
     this._renderer.shadowMap.needsUpdate = true;
 
-    //FOR DEBUG: this._scene.add(new THREE.CameraHelper(this._sun.shadow.camera));
+    
   }
 
   private _initTorch(): void {
@@ -1437,18 +1402,18 @@ export class Hass3dFloorplan extends LitElement {
   }
 
   protected display3dmodel(): void {
-    //load the model into the GL Renderer
+    
 
     this._log('Start Build Renderer');
     this._modelready = false;
 
-    //create and initialize scene and camera
+    
 
     this._scene = new THREE.Scene();
 
     this._camera = new THREE.PerspectiveCamera(45, 1, 0.1, 10000);
 
-    // create and initialize renderer
+    
 
     this._renderer = new THREE.WebGLRenderer({
       antialias: true,
@@ -1460,17 +1425,10 @@ export class Hass3dFloorplan extends LitElement {
     this._log('Max Texture Image Units: ' + this._maxtextureimage);
     this._log('Max Texture Image Units: number of lights casting shadow should be less than the above number');
 
-    // Budget of shadow-casting lights: each shadow map consumes a texture unit,
-    // and exceeding maxTextures corrupts rendering. Enforced in _add3dObjects.
     this._availableshadows = Math.max(6, this._maxtextureimage - 4);
 
-    // Mobile browsers evict WebGL contexts under memory pressure. three re-inits
-    // the GL state on restore, but this card only renders on demand, so without
-    // this the canvas would stay blank until the next interaction.
     this._renderer.domElement.addEventListener('webglcontextlost', (evt: Event) => {
       evt.preventDefault();
-      // Skip the warning during an intentional teardown (rerender/destroy calls
-      // forceContextLoss); only real, unexpected losses should be surfaced.
       if (!this._tearingDown) {
         console.warn('hass-3d-floorplan: WebGL context lost; waiting for restore');
       }
@@ -1497,12 +1455,12 @@ export class Hass3dFloorplan extends LitElement {
       this._scene.background = new THREE.Color('#aaaaaa');
     }
 
-    //this._renderer.physicallyCorrectLights = true;
+    
     if (this._config.sky && this._config.sky == 'yes') {
       this._renderer.outputEncoding = THREE.sRGBEncoding;
     }
     this._renderer.toneMapping = THREE.LinearToneMapping;
-    //this._renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    
     this._renderer.toneMappingExposure = 0.6;
     this._renderer.localClippingEnabled = true;
     this._renderer.physicallyCorrectLights = false;
@@ -1520,7 +1478,7 @@ export class Hass3dFloorplan extends LitElement {
       let fileExt = this._config.objfile.split('?')[0].split('.').pop();
 
       if (fileExt == 'obj') {
-        //waterfront format
+        
         if (this._config.mtlfile && this._config.mtlfile != '') {
           const mtlLoader: MTLLoader = new MTLLoader();
           mtlLoader.setPath(path);
@@ -1545,11 +1503,9 @@ export class Hass3dFloorplan extends LitElement {
         }
         this._modeltype = ModelSource.OBJ;
       } else if (fileExt == 'glb') {
-        //glb format
+        
         const loader = new GLTFLoader().setPath(path);
 
-        // Compressed glb support: Draco (Blender export) and meshopt (gltfpack).
-        // The Draco decoder itself is only downloaded if the model actually uses it.
         if (!this._dracoLoader) {
           this._dracoLoader = new DRACOLoader();
         }
@@ -1598,9 +1554,9 @@ export class Hass3dFloorplan extends LitElement {
   }
 
   private async _fetchModelBuffer(url: string): Promise<ArrayBuffer> {
-    // Persistent cache (when available) makes repeat loads instant on mobile:
-    // serve cached bytes immediately, revalidate against the server in the background.
-    // Requires a secure context (HTTPS or localhost); silently falls back otherwise.
+    
+    
+    
     const cacheEnabled = this._config.model_cache != 'no' && typeof caches !== 'undefined';
 
     if (cacheEnabled) {
@@ -1683,9 +1639,9 @@ export class Hass3dFloorplan extends LitElement {
       const etag = cached.headers.get('etag');
       const lastModified = cached.headers.get('last-modified');
 
-      // Without validators every revalidation would re-download the full file,
-      // burning mobile data in the background. Users can bust the cache by
-      // changing the objfile query string (e.g. home.glb?v=2).
+      
+      
+      
       if (!etag && !lastModified) {
         return;
       }
@@ -1707,18 +1663,18 @@ export class Hass3dFloorplan extends LitElement {
         );
       }
     } catch (error) {
-      // Offline or transient network failure: keep serving the cached copy.
+      
     }
   }
 
   private _onLoadMaterialProgress(_progress: ProgressEvent): void {
-    //progress function called at regular intervals during material loading process
+    
     this._content.innerText =
       localize('common.loading') + ' 1/2: ' + Math.round((_progress.loaded / _progress.total) * 100) + '%';
   }
 
   private _onLoadObjectProgress(_progress: ProgressEvent): void {
-    //progress function called at regular intervals during object loading process
+    
     this._content.innerText =
       localize('common.loading') + ' 2/2: ' + Math.round((_progress.loaded / _progress.total) * 100) + '%';
   }
@@ -1728,7 +1684,7 @@ export class Hass3dFloorplan extends LitElement {
   }
 
   private _onLoaded3DModel(object: Object3D): void {
-    // Object Loaded Event: last root object passed to the function
+    
 
     this._log('Object loaded start');
 
@@ -1791,8 +1747,8 @@ export class Hass3dFloorplan extends LitElement {
 
       this._controls = new OrbitControls(this._camera, this._renderer.domElement);
 
-      // Cap the pixel ratio: phones report devicePixelRatio of 3+, which makes the
-      // canvas rasterize up to 9x the pixels of the CSS area for little visual gain.
+      
+      
       let maxPixelRatio = Number(this._config.max_pixel_ratio);
       if (!Number.isFinite(maxPixelRatio) || maxPixelRatio <= 0) {
         maxPixelRatio = 2;
@@ -1807,11 +1763,7 @@ export class Hass3dFloorplan extends LitElement {
       this._controls.update();
 
       if (this._config.lock_camera == 'yes') {
-        /*
-                this._controls.enableRotate = false;
-                this._controls.enableZoom = false;
-                this._controls.enablePan = false;
-        */
+        
         this._controls.enabled = false;
       }
 
@@ -1834,14 +1786,7 @@ export class Hass3dFloorplan extends LitElement {
 
       this._resizeCanvas();
 
-      /*
-      this._zoom.forEach(element => {
-
-        this._bboxmodel.localToWorld(element.position);
-        this._bboxmodel.localToWorld(element.target);
-
-      });
-      */
+      
 
       this._startVisibilityWatch();
 
@@ -1858,7 +1803,7 @@ export class Hass3dFloorplan extends LitElement {
     this._levels = [];
     this._raycasting = [];
     this._raycastinglevels = [];
-    //TODO: explore solution with layers
+    
 
     this._log('Found level 0');
 
@@ -1923,7 +1868,7 @@ export class Hass3dFloorplan extends LitElement {
       }
 
       this._raycastinglevels[level].push(element);
-      //this._raycasting.push(element);
+      
 
       if (element instanceof THREE.Mesh) {
         if (!Array.isArray((element as THREE.Mesh).material)) {
@@ -2344,7 +2289,7 @@ export class Hass3dFloorplan extends LitElement {
   }
 
   private _onLoaded3DMaterials(materials: MTLLoader.MaterialCreator): void {
-    // Materials Loaded Event: last root material passed to the function
+    
     this._log('Material loaded start');
     materials.preload();
     let path = this._config.path;
@@ -2367,7 +2312,7 @@ export class Hass3dFloorplan extends LitElement {
 
   private _add3dObjects(): void {
     try {
-      // Add-Modify the objects bound to the entities in the card config
+      
       this._log('Add Objects Start');
       if (this._states && this._config.entities) {
         this._round_per_seconds = [];
@@ -2401,7 +2346,7 @@ export class Hass3dFloorplan extends LitElement {
                 this._axis_to_rotate.push(entity.rotate.axis);
                 this._rotation_state.push(0);
                 this._rotation_current_speed.push(0);
-                // Ramp (seconds) controls spin-up / coast-down easing. Default 1.5s; set 0 for instant.
+                
                 this._rotation_ramp.push(entity.rotate.ramp !== undefined ? Number(entity.rotate.ramp) : 1.5);
                 this._rotation_index.push(i);
                 let bbox: THREE.Box3;
@@ -2430,7 +2375,7 @@ export class Hass3dFloorplan extends LitElement {
                 }
 
                 if (entity.door.doortype == 'swing') {
-                  // this._log("Start Add Door Swing");
+                  
                   let position = new THREE.Vector3();
                   if (entity.door.hinge) {
                     let hinge: THREE.Mesh = this._scene.getObjectByName(entity.door.hinge) as THREE.Mesh;
@@ -2534,11 +2479,11 @@ export class Hass3dFloorplan extends LitElement {
                     );
                   });
 
-                  // this._log("End Add Door Swing");
+                  
                 }
                 if (entity.door.doortype == 'slide') {
-                  // if (entity.door.doortype == 'slide') {
-                  // this._log("Start Add Door Slide");
+                  
+                  
 
                   this._object_ids[i].objects.forEach((element) => {
                     let _obj: any = this._scene.getObjectByName(element.object_id);
@@ -2550,7 +2495,7 @@ export class Hass3dFloorplan extends LitElement {
                     );
                   });
 
-                  // this._log("End Add Door Slide");
+                  
                 }
               }
               if (entity.type3d == 'cover') {
@@ -2574,18 +2519,18 @@ export class Hass3dFloorplan extends LitElement {
                   switch (entity.cover.side) {
                     case 'up':
                       panevertices = [
-                        new THREE.Vector3(boxpane.min.x, boxpane.max.y, boxpane.min.z), // 000
-                        new THREE.Vector3(boxpane.min.x, boxpane.max.y, boxpane.max.z), // 001
-                        new THREE.Vector3(boxpane.max.x, boxpane.max.y, boxpane.min.z), // 010
-                        new THREE.Vector3(boxpane.max.x, boxpane.max.y, boxpane.max.z), // 011
+                        new THREE.Vector3(boxpane.min.x, boxpane.max.y, boxpane.min.z), 
+                        new THREE.Vector3(boxpane.min.x, boxpane.max.y, boxpane.max.z), 
+                        new THREE.Vector3(boxpane.max.x, boxpane.max.y, boxpane.min.z), 
+                        new THREE.Vector3(boxpane.max.x, boxpane.max.y, boxpane.max.z), 
                       ];
                       break;
                     case 'down':
                       panevertices = [
-                        new THREE.Vector3(boxpane.min.x, boxpane.min.y, boxpane.min.z), // 000
-                        new THREE.Vector3(boxpane.min.x, boxpane.min.y, boxpane.max.z), // 001
-                        new THREE.Vector3(boxpane.max.x, boxpane.min.y, boxpane.min.z), // 010
-                        new THREE.Vector3(boxpane.max.x, boxpane.min.y, boxpane.max.z), // 011
+                        new THREE.Vector3(boxpane.min.x, boxpane.min.y, boxpane.min.z), 
+                        new THREE.Vector3(boxpane.min.x, boxpane.min.y, boxpane.max.z), 
+                        new THREE.Vector3(boxpane.max.x, boxpane.min.y, boxpane.min.z), 
+                        new THREE.Vector3(boxpane.max.x, boxpane.min.y, boxpane.max.z), 
                       ];
                       break;
                   }
@@ -2611,7 +2556,7 @@ export class Hass3dFloorplan extends LitElement {
                     (_obj.material as THREE.Material).clippingPlanes = clipPlanes;
                   });
 
-                  //(pane.material as THREE.Material).clippingPlanes = clipPlanes;
+                  
 
                   if (this._config.shadow) {
                     if (this._config.shadow == 'yes') {
@@ -2621,14 +2566,14 @@ export class Hass3dFloorplan extends LitElement {
                     }
                   }
 
-                  //const planehelper = new THREE.PlaneHelper(coverplane, 200);
-                  //this._scene.add(planehelper);
+                  
+                  
 
                   this._updatecover(entity, this._states[i], i);
                 }
               }
               if (entity.type3d == 'light') {
-                // Add Virtual Light Objects
+                
                 this._object_ids[i].objects.forEach((element) => {
                   const _foundobject: any = this._scene.getObjectByName(element.object_id);
                   if (_foundobject) {
@@ -2683,10 +2628,10 @@ export class Hass3dFloorplan extends LitElement {
                         0.5,
                         decay,
                       );
-                      //this._bboxmodel.add(slight);
+                      
                       this._levels[_foundobject.userData.level].add(slight);
                       let target = new THREE.Object3D();
-                      //this._bboxmodel.add(target);
+                      
                       this._levels[_foundobject.userData.level].add(target);
                       slight.position.set(x, y, z);
                       if (entity.light.light_direction) {
@@ -2732,9 +2677,9 @@ export class Hass3dFloorplan extends LitElement {
                     this._setNoShadowLight(_foundobject);
                     _foundobject.traverseAncestors(this._setNoShadowLight.bind(this));
 
-                    // Each shadow-casting light consumes a texture unit; exceeding
-                    // maxTextures corrupts rendering, so cap the number that cast
-                    // shadows to the budget computed at renderer creation.
+                    
+                    
+                    
                     if (entity.light.shadow == 'no' || this._shadowLightCount >= this._availableshadows) {
                       if (entity.light.shadow != 'no' && this._shadowLightCount === this._availableshadows) {
                         console.warn(
@@ -2742,7 +2687,7 @@ export class Hass3dFloorplan extends LitElement {
                             this._availableshadows +
                             ') reached; remaining lights will not cast shadows',
                         );
-                        this._shadowLightCount++; // advance past the limit so this warns only once
+                        this._shadowLightCount++; 
                       }
                       light.castShadow = false;
                     } else {
@@ -2755,7 +2700,7 @@ export class Hass3dFloorplan extends LitElement {
                 });
               }
               if (entity.type3d == 'color') {
-                // Clone Material to allow object color changes based on Color Conditions Objects
+                
                 let j = 0;
                 this._object_ids[i].objects.forEach((element) => {
                   let _foundobject: any = this._scene.getObjectByName(element.object_id);
@@ -2767,7 +2712,7 @@ export class Hass3dFloorplan extends LitElement {
                 });
               }
               if (entity.type3d == 'text') {
-                // Clone object to print the text
+                
                 this._object_ids[i].objects.forEach((element) => {
                   let _foundobject: any = this._scene.getObjectByName(element.object_id);
 
@@ -2776,9 +2721,9 @@ export class Hass3dFloorplan extends LitElement {
 
                   let _newobject = _foundobject.clone();
 
-                  //(_newobject as Mesh).scale.set(1.005, 1.005, 1.005);
+                  
                   _newobject.name = 'f3dobj_' + _foundobject.name;
-                  //this._bboxmodel.add(_newobject);
+                  
                   this._levels[_foundobject.userData.level].add(_newobject);
                 });
               }
@@ -2819,12 +2764,12 @@ export class Hass3dFloorplan extends LitElement {
     }
   }
 
-  // manage all entity types
+  
 
   private _manageZoom(): void {
     if (this._config.zoom_areas) {
       this._config.zoom_areas.forEach((element) => {
-        // For each element of the Zoom Area array calculate zoom position and initialize zoom array
+        
 
         if (element.object_id && element.object_id != '') {
           let _foundobject: any = this._scene.getObjectByName(element.object_id);
@@ -2833,12 +2778,7 @@ export class Hass3dFloorplan extends LitElement {
             const _targetMesh: THREE.Mesh = _foundobject as THREE.Mesh;
             let targetBox = new THREE.Box3().setFromObject(_targetMesh);
 
-            /*this._centerobjecttopivot(_targetMesh, targetBox.min);
-            _targetMesh.geometry.applyMatrix4(
-              new THREE.Matrix4().makeTranslation(-targetBox.min.x, -targetBox.min.y, -targetBox.min.z),
-            );
-            targetBox = new THREE.Box3().setFromObject(_targetMesh);
-            */
+            
 
             let targetVector: THREE.Vector3 = new THREE.Vector3();
             targetVector.addVectors(targetBox.min, targetBox.max.sub(targetBox.min).multiplyScalar(0.5));
@@ -2876,7 +2816,7 @@ export class Hass3dFloorplan extends LitElement {
   }
 
   private _createroom(entity: Hass3dFloorplanConfig, i: number): void {
-    // createroom
+    
 
     this._log('Create Room');
 
@@ -2909,16 +2849,16 @@ export class Hass3dFloorplan extends LitElement {
             dimensions.z - 4,
           );
 
-          //const meshPosition = dimensions.addVectors(newRoomBox.min, newRoomBox.max).multiplyScalar(0.5);
+          
           const meshPosition = oldRoomBox.min.clone();
-          // move new mesh center so it's aligned with the original object
+          
           meshPosition.y += 2;
           meshPosition.x += 2;
           meshPosition.z += 2;
 
-          //TBD work on position bug
-          //const matrixmesh = new THREE.Matrix4().setPosition(meshPosition);
-          //newRoomGeometry.applyMatrix4(matrixmesh);
+          
+          
+          
 
           const newRoomMaterial: THREE.MeshPhongMaterial = new THREE.MeshPhongMaterial({
             color: 0xff0000,
@@ -2947,7 +2887,7 @@ export class Hass3dFloorplan extends LitElement {
           const sprite_height: number = entity.room.height ? entity.room.height : 75;
           newSprite.scale.set(sprite_width, sprite_height, 5);
 
-          //TBD work on position bug
+          
 
           const spritePosition = new THREE.Vector3(
             meshPosition.x + dimensions.x / 2,
@@ -2962,7 +2902,7 @@ export class Hass3dFloorplan extends LitElement {
             }
           }
 
-          //this._bboxmodel.add(newSprite);
+          
           this._levels[_roomMesh.userData.level].add(newSprite);
           this._levels[_roomMesh.userData.level].add(newRoomMesh);
 
@@ -2972,8 +2912,8 @@ export class Hass3dFloorplan extends LitElement {
             new THREE.Matrix4().makeTranslation(-newRoomBox.min.x, -newRoomBox.min.y, -newRoomBox.min.z),
           );
 
-          //const matrixsprite = new THREE.Matrix4().setPosition(new THREE.Vector3(meshPosition.x,newRoomBox.max.y+(elevation / 2)+(sprite_height / 2), meshPosition.z));
-          //newSprite.applyMatrix4(matrixsprite);
+          
+          
 
           newRoomMesh.position.set(meshPosition.x, meshPosition.y, meshPosition.z);
           newSprite.position.set(spritePosition.x, spritePosition.y, spritePosition.z);
@@ -2987,7 +2927,7 @@ export class Hass3dFloorplan extends LitElement {
   }
 
   private _updateroom(entity: Hass3dFloorplanConfig, text: string, uom: string, i: number): void {
-    //update sprite text and other change conditions
+    
 
     const _roomMesh: THREE.Object3D = this._scene.getObjectByName(this._rooms[i]);
     const _roomSprite: THREE.Object3D = this._scene.getObjectByName(this._sprites[i]);
@@ -3030,11 +2970,11 @@ export class Hass3dFloorplan extends LitElement {
   }
 
   private _updateTextCanvas(entity: Hass3dFloorplanConfig, canvas: HTMLCanvasElement, text: string): void {
-    //Manages the update of the text entities according to their configuration and the new text of the entity state
+    
 
     const ctx = canvas.getContext('2d');
 
-    // Prepare the font to be able to measure
+    
     let fontSize = 56;
     ctx.font = `${fontSize}px ${entity.font ? entity.font : 'monospace'}`;
 
@@ -3047,7 +2987,7 @@ export class Hass3dFloorplan extends LitElement {
     if (entity.span) {
       perct = parseFloat(entity.span) / 100.0;
     }
-    // Resize canvas to match text size
+    
 
     width = width / perct;
     height = height / perct;
@@ -3056,7 +2996,7 @@ export class Hass3dFloorplan extends LitElement {
     canvas.style.width = width + 'px';
     canvas.style.height = height + 'px';
 
-    // Re-apply font since canvas is resized.
+    
     ctx.font = `${fontSize}px ${entity.font ? entity.font : 'monospace'}`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -3070,7 +3010,7 @@ export class Hass3dFloorplan extends LitElement {
   }
 
   private _applyTextCanvas(canvas: HTMLCanvasElement, object: THREE.Object3D) {
-    // put the canvas texture with the text on top of the generic object: consider merge with the applyTextCanvasSprite
+    
     const _foundobject: any = object;
     let fileExt = this._config.objfile.split('?')[0].split('.').pop();
 
@@ -3078,10 +3018,10 @@ export class Hass3dFloorplan extends LitElement {
       const mat = (_foundobject as THREE.Mesh).material as THREE.MeshBasicMaterial;
       const existingMap: any = mat && mat.map;
 
-      // Updates repaint the SAME canvas, so if the material already carries a
-      // CanvasTexture backed by that canvas we just re-upload it. Minting a new
-      // texture every update (the old behaviour) orphaned the previous one with
-      // no dispose() — a GPU-memory leak on every sensor tick.
+      
+      
+      
+      
       if (existingMap instanceof THREE.CanvasTexture && existingMap.image === canvas) {
         existingMap.needsUpdate = true;
         return;
@@ -3109,13 +3049,13 @@ export class Hass3dFloorplan extends LitElement {
   }
 
   private _applyTextCanvasSprite(canvas: HTMLCanvasElement, object: THREE.Sprite) {
-    // put the canvas texture with the text on top of the Sprite object: consider merge with the applyTextCanvas
+    
 
     const mat: any = object.material;
     const existingMap: any = mat && mat.map;
 
-    // Reuse the CanvasTexture across room-label updates rather than leaking one
-    // per update (see _applyTextCanvas).
+    
+    
     if (existingMap instanceof THREE.CanvasTexture && existingMap.image === canvas) {
       existingMap.needsUpdate = true;
       return;
@@ -3139,7 +3079,7 @@ export class Hass3dFloorplan extends LitElement {
   }
 
   private _TemperatureToRGB(t: number): number[] {
-    let temp = 10000 / t; //kelvins = 1,000,000/mired (and that /100)
+    let temp = 10000 / t; 
     let r: number, g: number, b: number;
     let rgb: number[] = [0, 0, 0];
 
@@ -3168,7 +3108,7 @@ export class Hass3dFloorplan extends LitElement {
   }
 
   private _RGBToHex(r: number, g: number, b: number): string {
-    // RGB Color array to hex string converter
+    
     let rs: string = r.toString(16);
     let gs: string = g.toString(16);
     let bs: string = b.toString(16);
@@ -3190,7 +3130,7 @@ export class Hass3dFloorplan extends LitElement {
   }
 
   private _updatelight(entity: Hass3dFloorplanConfig, i: number): void {
-    // Illuminate the light object when, for the bound device, one of its attribute gets modified in HA. See set hass property
+    
 
     this._object_ids[i].objects.forEach((element) => {
       const light: any = this._scene.getObjectByName(element.object_id + '_light');
@@ -3223,7 +3163,7 @@ export class Hass3dFloorplan extends LitElement {
         }
       } else {
         light.intensity = 0;
-        //light.color = new THREE.Color('#000000');
+        
       }
       if (this._config.extralightmode) {
         if (this._config.extralightmode == 'yes') {
@@ -3247,8 +3187,8 @@ export class Hass3dFloorplan extends LitElement {
   }
 
   private _updatedoor(entity: Hass3dFloorplanConfig, i: number): void {
-    // perform action on door objects
-    // this._log("Update Door Start");
+    
+    
 
     const _obj: any = this._scene.getObjectByName(this._object_ids[i].objects[0].object_id);
 
@@ -3266,7 +3206,7 @@ export class Hass3dFloorplan extends LitElement {
           this._rotatedoorpivot(entity, i);
         }
         if (entity.door.doortype == 'slide') {
-          // if (entity.door.doortype == 'slide') {
+          
           let pane = this._scene.getObjectByName(entity.door.pane);
           if (!pane) {
             pane = this._scene.getObjectByName(this._object_ids[i].objects[0].object_id);
@@ -3288,30 +3228,30 @@ export class Hass3dFloorplan extends LitElement {
       }
     }
     this._renderer.shadowMap.needsUpdate = true;
-    // this._log("Update Door End");
+    
   }
 
   private _centerobjecttopivot(object: THREE.Mesh, pivot: THREE.Vector3) {
-    //Center a Mesh  along is defined pivot point
+    
 
     object.applyMatrix4(new THREE.Matrix4().makeTranslation(-pivot.x, -pivot.y, -pivot.z));
     object.position.copy(pivot);
   }
 
   private _rotatedoorpivot(entity: Hass3dFloorplanConfig, index: number) {
-    // this._log("Rotate Door Start");
+    
 
-    //For a swing door, rotate the objects along the configured axis and the degrees of opening
+    
     this._object_ids[index].objects.forEach((element) => {
       let _obj: any = this._scene.getObjectByName(element.object_id);
 
-      //this._centerobjecttopivot(_obj, this._pivot[index]);
+      
       const targetRotation: THREE.Vector3 = new THREE.Vector3(0, 0, 0);
       const direction = entity.door.swing_direction || entity.door.direction;
 
       if (this._states[index] == 'on') {
         if (direction == 'inner') {
-          //_obj.rotateOnAxis(this._axis_for_door[index], -Math.PI * this._degrees[index] / 180);
+          
           if (this._axis_for_door[index].y == 1) {
             targetRotation.y = (-Math.PI * this._degrees[index]) / 180;
           } else if (this._axis_for_door[index].x == 1) {
@@ -3320,7 +3260,7 @@ export class Hass3dFloorplan extends LitElement {
             targetRotation.z = (-Math.PI * this._degrees[index]) / 180;
           }
         } else if (direction == 'outer') {
-          //_obj.rotateOnAxis(this._axis_for_door[index], Math.PI * this._degrees[index] / 180);
+          
           if (this._axis_for_door[index].y == 1) {
             targetRotation.y = (Math.PI * this._degrees[index]) / 180;
           } else if (this._axis_for_door[index].x == 1) {
@@ -3339,26 +3279,26 @@ export class Hass3dFloorplan extends LitElement {
         .to(targetRotation, 1200)
         .easing(TWEEN.Easing.Cubic.InOut)
         .onComplete(() => {
-          // Stop animation loop if all tweens finished
+          
           this._startOrStopAnimationLoop();
         })
         .start();
       this._startOrStopAnimationLoop();
     });
 
-    // this._log("Rotate Door End");
+    
   }
 
   private _translatedoor(pane: THREE.Object3D, percentage: number, side: string, index: number, doorstate: string) {
-    // this._log("Translate Door Start");
-    //For a slide door, translate the objects according to the configured directions and percentage of opening
+    
+    
 
     let translate: THREE.Vector3 = new THREE.Vector3(0, 0, 0);
 
     let size: THREE.Vector3 = new THREE.Vector3();
     let center: THREE.Vector3 = new THREE.Vector3();
 
-    //TBD let pane = this._scene.getObjectByName(item.door.pane);
+    
 
     let bbox = new THREE.Box3().setFromObject(pane);
 
@@ -3414,18 +3354,18 @@ export class Hass3dFloorplan extends LitElement {
         .to(targetPosition, 1200)
         .easing(TWEEN.Easing.Cubic.InOut)
         .onComplete(() => {
-          // Stop animation loop if all tweens finished
+          
           this._startOrStopAnimationLoop();
         })
         .start();
     });
 
     this._startOrStopAnimationLoop();
-    // this._log("Translate Door End");
+    
   }
 
   private _updateroomcolor(item: any, index: number): void {
-    // Change the color of the room when, for the bound entity, when the state matches the condition
+    
 
     let _room: any = this._scene.getObjectByName(this._rooms[index]);
 
@@ -3454,7 +3394,7 @@ export class Hass3dFloorplan extends LitElement {
   }
 
   private _updatecolor(item: any, index: number): void {
-    // Change the color of the object when, for the bound device, the state matches the condition
+    
 
     let j = 0;
     this._object_ids[index].objects.forEach((element) => {
@@ -3491,14 +3431,14 @@ export class Hass3dFloorplan extends LitElement {
   }
 
   private _updatehide(entity: Hass3dFloorplanConfig, index: number): void {
-    // hide the object when the state is equal to the configured value
+    
     this._object_ids[index].objects.forEach((element) => {
-      //object clickable: check layers solution
+      
       const _object: any = this._scene.getObjectByName(element.object_id);
 
       if (_object) {
         if (this._states[index] == entity.hide.state) {
-          //TODO: Layers to hide ?
+          
           _object.visible = false;
         } else {
           _object.visible = true;
@@ -3509,7 +3449,7 @@ export class Hass3dFloorplan extends LitElement {
   }
 
   private _updateshow(entity: Hass3dFloorplanConfig, index: number): void {
-    // hide the object when the state is equal to the configured value
+    
     this._object_ids[index].objects.forEach((element) => {
       const _object: any = this._scene.getObjectByName(element.object_id);
 
@@ -3517,7 +3457,7 @@ export class Hass3dFloorplan extends LitElement {
         if (this._states[index] == entity.show.state) {
           _object.visible = true;
         } else {
-          //TODO: Layers to hide ?
+          
           _object.visible = false;
         }
       }
@@ -3525,27 +3465,27 @@ export class Hass3dFloorplan extends LitElement {
     this._renderer.shadowMap.needsUpdate = true;
   }
 
-  // end of manage entity types
+  
 
-  // https://lit-element.polymer-project.org/guide/lifecycle#shouldupdate
+  
   protected shouldUpdate(_changedProps: PropertyValues): boolean {
     return true;
-    //return hasConfigOrEntityChanged(this, _changedProps, false);
+    
   }
 
   private _rotatecalc(entity: Hass3dFloorplanConfig, i: number) {
     let j = this._rotation_index.indexOf(i);
 
-    //1 if the entity is on, 0 if the entity is off
+    
     this._rotation_state[j] = this._states[i] == 'on' ? 1 : 0;
 
-    //If the entity is on and it has the 'percentage' attribute, convert the percentage integer
-    //into a decimal and store it as the rotation state
+    
+    
     if (this._rotation_state[j] != 0 && this._hass.states[entity.entity].attributes['percentage']) {
       this._rotation_state[j] = this._hass.states[entity.entity].attributes['percentage'] / 100;
     }
 
-    //If the entity is on and it is reversed, set the rotation state to the negative value of itself
+    
     if (
       this._rotation_state[j] != 0 &&
       this._hass.states[entity.entity].attributes['direction'] &&
@@ -3558,8 +3498,8 @@ export class Hass3dFloorplan extends LitElement {
   }
 
   private _needsAnimationLoop() {
-    // Keep animating while any rotation has a nonzero target OR is still easing toward zero
-    // (spin-up / coast-down), and while any Tween is running.
+    
+    
     return (
       this._rotation_state.some((item) => item !== 0) ||
       this._rotation_current_speed.some((item) => item !== 0) ||
@@ -3567,7 +3507,7 @@ export class Hass3dFloorplan extends LitElement {
     );
   }
 
-  // If every rotating entity and Tween is stopped, disable animation
+  
   private _startOrStopAnimationLoop() {
     if (this._needsAnimationLoop()) {
       if (this._to_animate) return;
@@ -3586,13 +3526,13 @@ export class Hass3dFloorplan extends LitElement {
     let rotateBy = clockDelta * Math.PI * 2;
 
     this._rotation_state.forEach((target, index) => {
-      // Ease the current speed toward the target speed for spin-up / coast-down.
-      // tau is the easing time constant (seconds); tau <= 0 means snap instantly.
+      
+      
       const tau = this._rotation_ramp[index];
       const factor = tau > 0 ? 1 - Math.exp(-clockDelta / tau) : 1;
       let current = this._rotation_current_speed[index];
       current += (target - current) * factor;
-      // Snap to the target once close enough so the loop can eventually stop.
+      
       if (Math.abs(target - current) < 0.001) current = target;
       this._rotation_current_speed[index] = current;
 
@@ -3621,11 +3561,11 @@ export class Hass3dFloorplan extends LitElement {
     this._renderer.shadowMap.needsUpdate = true;
     this._renderer.render(this._scene, this._camera);
 
-    // Once every rotation has coasted to a stop (and no tweens remain), shut the loop down.
+    
     this._startOrStopAnimationLoop();
   }
 
-  // https://lit-element.polymer-project.org/guide/templates
+  
 
   protected render(): TemplateResult | void {
     if (this._config.show_error) {
@@ -3663,7 +3603,7 @@ export class Hass3dFloorplan extends LitElement {
     return html`${errorCard}`;
   }
 
-  // https://lit-element.polymer-project.org/guide/styles
+  
   static get styles(): CSSResultGroup {
     return css``;
   }

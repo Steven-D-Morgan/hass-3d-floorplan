@@ -1,17 +1,11 @@
-/* eslint-disable @typescript-eslint/explicit-module-boundary-types */
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
-/* eslint-disable @typescript-eslint/no-explicit-any */
+
+
+
 import { PropertyValues } from 'lit';
 import { HomeAssistant, LovelaceConfig } from './ha';
 import { Hass3dFloorplanConfig } from './types';
 
-/**
- * Performs a deep merge of objects and returns new object. Does not modify
- * objects (immutable) and merges arrays via concatenation and filtering.
- *
- * @param {...object} objects - Objects to merge
- * @returns {object} New object with merged key/values
- */
+
 export function mergeDeep(...objects: any): any {
   const isObject = (obj: any): boolean => obj && typeof obj === 'object';
 
@@ -21,7 +15,7 @@ export function mergeDeep(...objects: any): any {
       const oVal = obj[key];
 
       if (Array.isArray(pVal) && Array.isArray(oVal)) {
-        /* eslint no-param-reassign: 0 */
+        
         prev[key] = pVal.concat(...oVal);
       } else if (isObject(pVal) && isObject(oVal)) {
         prev[key] = mergeDeep(pVal, oVal);
@@ -38,7 +32,7 @@ export function mapRange(num: number, in_min: number, in_max: number, out_min: n
   return ((num - in_min) * (out_max - out_min)) / (in_max - in_min) + out_min;
 }
 
-// Check if config or Entity changed
+
 export function hasConfigOrEntitiesChanged(element: any, changedProps: PropertyValues, forceUpdate: boolean): boolean {
   if (changedProps.has('config') || forceUpdate) {
     return true;
@@ -60,7 +54,7 @@ export function hasConfigOrEntitiesChanged(element: any, changedProps: PropertyV
 }
 
 export const getLovelace = () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  
   let root: any = document.querySelector('home-assistant');
   root = root && root.shadowRoot;
   root = root && root.querySelector('home-assistant-main');
@@ -135,7 +129,7 @@ export function createObjectGroupConfigArray(config): Hass3dFloorplanConfig[] {
       }
     }
   }
-  //console.log(JSON.stringify(configArray));
+  
   return configArray;
 }
 
@@ -201,11 +195,11 @@ export function arrayMove(arr, fromIndex, toIndex): any[] {
   return newArray;
 }
 
-// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+
 export const loadHaYamlEditor = async () => {
   if (customElements.get("ha-yaml-editor")) return;
 
-  // Load in ha-yaml-editor from developer-tools-service
+  
   const ppResolver = document.createElement("partial-panel-resolver");
   const routes = (ppResolver as any).getRoutes([
     {

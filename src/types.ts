@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { ActionConfig, LovelaceCard, LovelaceCardEditor } from './ha';
 
 declare global {
@@ -8,7 +8,7 @@ declare global {
   }
 }
 
-// TODO Add your configuration elements here for type-checking
+
 export interface Hass3dFloorplanConfig {
   type: string;
   path: string;
