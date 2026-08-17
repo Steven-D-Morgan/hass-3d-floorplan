@@ -1,9 +1,8 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
-/* eslint-disable @typescript-eslint/ban-types */
 import { LitElement, CSSResultGroup, css } from 'lit';
 import { property, customElement, state } from 'lit/decorators.js';
 import { TemplateResult, html } from 'lit';
-import { HomeAssistant, fireEvent, LovelaceCardEditor } from 'custom-card-helpers';
+import { HomeAssistant, fireEvent, LovelaceCardEditor } from './ha';
 import {
   createEditorConfigArray,
   arrayMove,
@@ -119,7 +118,6 @@ export class Hass3dFloorplanEditor extends LitElement implements LovelaceCardEdi
       visible: false,
     };
 
-    this.hass.resources;
     const hideOptions = {
       icon: 'eye-off',
       name: 'Hide',

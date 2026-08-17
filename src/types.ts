@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { ActionConfig, LovelaceCard, LovelaceCardEditor } from 'custom-card-helpers';
+import { ActionConfig, LovelaceCard, LovelaceCardEditor } from './ha';
 
 declare global {
   interface HTMLElementTagNameMap {

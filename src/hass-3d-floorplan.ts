@@ -1,13 +1,6 @@
-﻿/* eslint-disable @typescript-eslint/ban-types */
-import { LitElement, html, TemplateResult, css, PropertyValues, CSSResultGroup, render } from 'lit';
+﻿import { LitElement, html, TemplateResult, css, PropertyValues, CSSResultGroup, render } from 'lit';
 import { property, customElement, state } from 'lit/decorators.js';
-import {
-  HomeAssistant,
-  ActionHandlerEvent,
-  handleAction,
-  LovelaceCardEditor,
-  fireEvent,
-} from 'custom-card-helpers'; // This is a community maintained npm module with common helper functions/types
+import { HomeAssistant, LovelaceCardEditor, fireEvent } from './ha';
 import './editor';
 import { HassEntity } from 'home-assistant-js-websocket';
 import { createConfigArray, createObjectGroupConfigArray, getLovelace } from './helpers';
@@ -1375,7 +1368,6 @@ export class Hass3dFloorplan extends LitElement {
     // sun directional light parameters
     const d = 1000;
 
-    this._sun.shadow.camera;
     this._sun.castShadow = true;
 
     this._sun.shadow.mapSize.width = 1024;
@@ -3654,13 +3646,6 @@ export class Hass3dFloorplan extends LitElement {
       >
       </ha-card>
     `;
-  }
-
-  private _handleAction(ev: ActionHandlerEvent): void {
-    //not implemented to not interfere with  the Action handler of the Three.js canvas object
-    if (this.hass && this._config && ev.detail.action) {
-      handleAction(this, this.hass, this._config, ev.detail.action);
-    }
   }
 
   private _showWarning(warning: string): TemplateResult {

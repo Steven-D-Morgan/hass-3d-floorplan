@@ -1,5 +1,5 @@
 import { nodeResolve as resolve } from "@rollup/plugin-node-resolve";
-import typescript from "rollup-plugin-typescript2";
+import typescript from "@rollup/plugin-typescript";
 import { babel } from "@rollup/plugin-babel";
 import serve from "rollup-plugin-serve";
 import terser from "@rollup/plugin-terser";
