@@ -30,7 +30,7 @@ Do these first: all are small, and together they would have *caught* several bug
 - [ ] **Make `logarithmicDepthBuffer`/`antialias` configurable, default log-depth off** `med · small` — log-depth writes `gl_FragDepth` per fragment (kills early-Z on mobile) and is rarely needed at near=0.1/far=10000.
 - [ ] **Compile each template once + state-diff early-out** `med · small` — templates recompile a `Function` on every hass push and the setter loops all entities with no diff vs the previous state. Compile at `setConfig`; short-circuit when nothing bound changed.
 - [ ] **De-duplicate the HA shadow-DOM walk** `med · small` — the brittle `home-assistant → … → hui-view` descent is copied in `_ispanel`, `_issidebar`, and `getLovelace()`. Extract one `resolveHuiView()` helper so the most HA-version-fragile code has one place to fix.
-- [ ] **HACS validation workflow** `med · small` — add the official `hacs/action` job (category `plugin`) that validates `hacs.json`/structure before users hit a broken install.
+- [x] **HACS validation workflow** `med · small` — _done (v2.4.2)._ Added `.github/workflows/hacs.yml` running the official `hacs/action` (category `plugin`) on push/PR to master, a daily schedule, and manual dispatch — so structural or `hacs.json` regressions fail CI before users hit a broken install.
 - [ ] **Single-source the version** `med · small` — inject `CARD_VERSION` from `package.json` at build (`@rollup/plugin-replace`) and add a CI guard that the release tag matches. Removes the 3-place hand-sync.
 - [ ] **dependabot + `.nvmrc`/`engines` + CONTRIBUTING.md** `med · small` — standard repo hygiene; Node 18 is duplicated across three workflows with no single source.
 
@@ -120,4 +120,4 @@ The CI log is noisy with deprecations and `npm audit` reports vulnerabilities. K
 
 ---
 
-_Last updated: 2026-08-17 (v2.4.2-rc4 prep). Ratings are guidance, not gospel — revisit as the code changes._
+_Last updated: 2026-08-17 (v2.4.2). Ratings are guidance, not gospel — revisit as the code changes._

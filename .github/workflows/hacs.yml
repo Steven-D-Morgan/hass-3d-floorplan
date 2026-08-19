@@ -1,0 +1,26 @@
+name: HACS
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+  schedule:
+    - cron: "0 0 * * *"
+  workflow_dispatch:
+
+jobs:
+  hacs:
+    name: HACS validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      # HACS publishes no version tags; pinned to main @ 2026-08-17 for supply-chain safety.
+      # To update: git ls-remote https://github.com/hacs/action.git refs/heads/main
+      - name: HACS validation
+        uses: hacs/action@1ebf01c408f29afcb6406bd431bc98fd8cbb15aa
+        with:
+          category: plugin
