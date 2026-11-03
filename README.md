@@ -124,7 +124,7 @@ The GLB file is self-contained so you only need that one file to load the model.
 | overlay\_<style> | string | various      | customize overlay panel appearance (colors, fonts, etc.)                                                                                                                   |
 | max_pixel_ratio  | float  | 2            | cap on the device pixel ratio used for rendering. Phones report 3+, which is expensive for little visual gain; lower to 1 or 1.5 for faster rendering on weak devices      |
 | model_cache      | string | 'yes'        | cache the model file on the device for instant repeat loads (needs HTTPS; updates are picked up in the background — see [Mobile performance](#mobile-performance))         |
-| draco_decoder_path | string | see desc   | URL of the Draco decoder for Draco-compressed .glb files. Default: `https://www.gstatic.com/draco/versioned/decoders/1.5.6/`. Self-host and set this for offline setups   |
+| draco_decoder_path | string | see desc   | URL of the Draco decoder for Draco-compressed .glb files. Default: the bundled `./draco/` folder next to the card (resolved from `import.meta.url`), which lands at `/hacsfiles/hass-3d-floorplan/draco/` for HACS installs and `/local/<path>/draco/` for manual installs. Set this to override and host the decoder files elsewhere; leave blank for the bundled default |
 | debug            | string | no           | 'yes' to print verbose loading/lifecycle logs to the browser console. Off by default; warnings and errors are always shown                                                 |
 
 **Note on sky:** When using sky, the sun going above the ceiling can cause strange illumination. Place a transparent slab object (transparent box) on top of your floor named `transparent_slab*` to block sunlight from above. You can also activate the ceiling in SweetHome3D.
@@ -519,7 +519,7 @@ The card supports **Draco** and **meshopt** compressed GLB files, which are typi
   - command line: `npx gltf-pipeline -i home.glb -o home-draco.glb -d`
 - **meshopt**: `npx gltfpack -i home.glb -o home-opt.glb -cc -kn` — **the `-kn` flag is required**, otherwise gltfpack renames objects and your `object_id` bindings break. Verify your bindings still work after packing.
 
-Decompression is fast, and the Draco decoder itself is only downloaded when the model actually uses Draco. By default it comes from Google's CDN; for fully offline setups, copy the [decoder files](https://github.com/mrdoob/three.js/tree/r130/examples/js/libs/draco/gltf) (`draco_wasm_wrapper.js`, `draco_decoder.wasm`) to your `www` folder and set `draco_decoder_path: /local/draco/`.
+Decompression is fast, and the Draco decoder itself is only loaded when the model actually uses Draco. As of 2.5.0 the decoder files are bundled with the release (in `dist/draco/`, extracted by HACS to `/hacsfiles/hass-3d-floorplan/draco/`, or sitting next to `hass-3d-floorplan.js` for a manual install), so offline and air-gapped setups work out of the box with no `draco_decoder_path` override. Set `draco_decoder_path:` only if you want to host the decoder files somewhere else.
 
 ### 2. Model caching (automatic)
 
