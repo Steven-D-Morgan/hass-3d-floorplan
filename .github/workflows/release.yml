@@ -19,12 +19,28 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Build the file
+      - name: Build the bundle
         run: |
           npm ci
           npm run rollup
 
-      - name: Upload js to release
+      - name: Package release zip
+        run: |
+          cd dist
+          zip -r "$GITHUB_WORKSPACE/hass-3d-floorplan.zip" . -x '*.zip'
+          cd ..
+          ls -la hass-3d-floorplan.zip
+
+      - name: Upload zip to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: hass-3d-floorplan.zip
+          asset_name: hass-3d-floorplan.zip
+          tag: ${{ github.ref }}
+          overwrite: true
+
+      - name: Upload individual js (backward compat with older HACS clients)
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}

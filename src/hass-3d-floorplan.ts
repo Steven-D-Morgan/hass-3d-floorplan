@@ -35,6 +35,22 @@ console.info(
   preview: true,
   description: 'Interactive 3D floorplan card for Home Assistant',
 });
+
+const GSTATIC_DRACO_FALLBACK = 'https://www.gstatic.com/draco/versioned/decoders/1.5.6/';
+
+export function _defaultDracoDecoderPath(): string {
+  try {
+    const metaUrl = (import.meta as any)?.url as string | undefined;
+    if (metaUrl) {
+      const clean = metaUrl.split('?')[0].split('#')[0];
+      return new URL('./draco/', clean).toString();
+    }
+  } catch (_e) {
+    void 0;
+  }
+  return GSTATIC_DRACO_FALLBACK;
+}
+
 class ModelSource {
   public static OBJ = 0;
   public static GLB = 1;
@@ -1516,7 +1532,7 @@ export class Hass3dFloorplan extends LitElement {
         this._dracoLoader.setDecoderPath(
           this._config.draco_decoder_path
             ? this._config.draco_decoder_path
-            : 'https://www.gstatic.com/draco/versioned/decoders/1.5.6/',
+            : _defaultDracoDecoderPath(),
         );
         loader.setDRACOLoader(this._dracoLoader);
         loader.setMeshoptDecoder(MeshoptDecoder);

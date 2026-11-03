@@ -6,8 +6,26 @@ import terser from '@rollup/plugin-terser';
 import serve from 'rollup-plugin-serve';
 import json from '@rollup/plugin-json';
 import ignore from "./rollup-ignore-plugin.js";
+import { copyFileSync, mkdirSync } from 'fs';
+import { dirname, join, resolve } from 'path';
 
 const dev = process.env.ROLLUP_WATCH;
+
+function copyDraco() {
+  return {
+    name: 'copy-draco-decoder',
+    writeBundle(options) {
+      const outDir = options.dir || dirname(options.file || 'dist/hass-3d-floorplan.js');
+      const threeEntry = require.resolve('three');
+      const dracoSrc = resolve(dirname(threeEntry), '..', 'examples', 'js', 'libs', 'draco', 'gltf');
+      const dracoOut = join(outDir, 'draco');
+      mkdirSync(dracoOut, { recursive: true });
+      for (const file of ['draco_decoder.js', 'draco_decoder.wasm', 'draco_wasm_wrapper.js']) {
+        copyFileSync(join(dracoSrc, file), join(dracoOut, file));
+      }
+    },
+  };
+}
 
 const serveopts = {
   contentBase: ['./dist'],
@@ -51,7 +69,7 @@ export default [
       dir: 'dist',
       format: 'es',
     },
-    plugins: [...plugins],
+    plugins: [...plugins, copyDraco()],
   },
 ];
 

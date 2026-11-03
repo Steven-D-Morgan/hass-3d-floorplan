@@ -28,26 +28,28 @@
 
 ### HACS (recommended)
 
-Add this repository as a custom repository in HACS:
+1. Open HACS in your Home Assistant instance.
+2. Search for **HASS 3D Floorplan** in the Frontend category and install it.
+3. Reload Home Assistant.
 
-1. Open HACS in your Home Assistant instance
-2. Go to Frontend
-3. Click the three dots menu and select "Custom repositories"
-4. Add `https://github.com/Steven-D-Morgan/hass-3d-floorplan` with category "Lovelace"
-5. Install "HASS 3D Floorplan"
+> Not yet in the default HACS catalog? Add it as a custom repository: HACS → three-dot menu → **Custom repositories** → paste `https://github.com/Steven-D-Morgan/hass-3d-floorplan`, category **Lovelace**.
+
+The 2.5.0 release ships as a zip containing both `hass-3d-floorplan.js` and a `draco/` folder with the Draco decoder — HACS extracts both into `/hacsfiles/hass-3d-floorplan/`, so compressed `.glb` models decode entirely from your Home Assistant without reaching out to Google's CDN. Offline instances work out of the box.
 
 ### Manual
 
-Download `hass-3d-floorplan.js` from the [latest release](https://github.com/Steven-D-Morgan/hass-3d-floorplan/releases) and upload it to your `www` folder in Home Assistant.
+Download `hass-3d-floorplan.zip` from the [latest release](https://github.com/Steven-D-Morgan/hass-3d-floorplan/releases), extract it, and copy the resulting `hass-3d-floorplan.js` **and the `draco/` folder** into the same directory inside your Home Assistant `www` folder (e.g. `www/hass-3d-floorplan/`).
 
 Load as a `module`:
 
 ```yaml
-- url: /local/pathtofile/hass-3d-floorplan.js
+- url: /local/hass-3d-floorplan/hass-3d-floorplan.js
   type: module
 ```
 
 See Home Assistant documentation for [adding custom cards](https://developers.home-assistant.io/docs/frontend/custom-ui/custom-card) and [registering JavaScript resources](https://developers.home-assistant.io/docs/frontend/custom-ui/registering-resources).
+
+> **Draco decoder path** (optional) — if the bundled decoder path can't be reached from the browser for some reason, set `draco_decoder_path:` on the card config to a URL you host yourself; leave it empty to use the bundled `./draco/` sitting next to the card bundle.
 
 ## Model Design and Installation
 

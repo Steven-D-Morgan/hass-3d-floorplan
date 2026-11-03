@@ -1183,11 +1183,9 @@ export class Hass3dFloorplanEditor extends LitElement implements LovelaceCardEdi
                     <mwc-list-item value="no">no</mwc-list-item>
                 </h3d-select>
                 <h3d-textfield
-                  label="Draco Decoder Path (compressed glb)"
+                  label="Draco Decoder Path (compressed glb — leave blank to use the bundled decoder next to this card)"
                   fullwidth
-                  .value=${config.draco_decoder_path
-                    ? config.draco_decoder_path
-                    : 'https://www.gstatic.com/draco/versioned/decoders/1.5.6/'}
+                  .value=${config.draco_decoder_path ? config.draco_decoder_path : ''}
                   .configObject=${config}
                   .configAttribute=${'draco_decoder_path'}
                   @input=${this._valueChanged}
