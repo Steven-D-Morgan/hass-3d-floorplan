@@ -18,10 +18,9 @@ function copyDraco() {
       const outDir = options.dir || dirname(options.file || 'dist/hass-3d-floorplan.js');
       const threeEntry = require.resolve('three');
       const dracoSrc = resolve(dirname(threeEntry), '..', 'examples', 'js', 'libs', 'draco', 'gltf');
-      const dracoOut = join(outDir, 'draco');
-      mkdirSync(dracoOut, { recursive: true });
+      mkdirSync(outDir, { recursive: true });
       for (const file of ['draco_decoder.js', 'draco_decoder.wasm', 'draco_wasm_wrapper.js']) {
-        copyFileSync(join(dracoSrc, file), join(dracoOut, file));
+        copyFileSync(join(dracoSrc, file), join(outDir, file));
       }
     },
   };

@@ -34,11 +34,11 @@
 
 > Not yet in the default HACS catalog? Add it as a custom repository: HACS → three-dot menu → **Custom repositories** → paste `https://github.com/Steven-D-Morgan/hass-3d-floorplan`, category **Lovelace**.
 
-The 2.5.0 release ships as a zip containing both `hass-3d-floorplan.js` and a `draco/` folder with the Draco decoder — HACS extracts both into `/hacsfiles/hass-3d-floorplan/`, so compressed `.glb` models decode entirely from your Home Assistant without reaching out to Google's CDN. Offline instances work out of the box.
+As of 2.5.1 the release attaches four files — `hass-3d-floorplan.js`, `draco_decoder.js`, `draco_decoder.wasm`, and `draco_wasm_wrapper.js` — directly to the GitHub release. HACS downloads all four into `/hacsfiles/hass-3d-floorplan/` next to each other, so compressed `.glb` models decode entirely from your Home Assistant without reaching out to Google's CDN. Offline instances work out of the box.
 
 ### Manual
 
-Download `hass-3d-floorplan.zip` from the [latest release](https://github.com/Steven-D-Morgan/hass-3d-floorplan/releases), extract it, and copy the resulting `hass-3d-floorplan.js` **and the `draco/` folder** into the same directory inside your Home Assistant `www` folder (e.g. `www/hass-3d-floorplan/`).
+Download all four assets from the [latest release](https://github.com/Steven-D-Morgan/hass-3d-floorplan/releases) — `hass-3d-floorplan.js`, `draco_decoder.js`, `draco_decoder.wasm`, `draco_wasm_wrapper.js` — and drop them into the **same directory** inside your Home Assistant `www` folder (e.g. `www/hass-3d-floorplan/`). The card loads the decoder files from its own folder, so they must sit next to `hass-3d-floorplan.js`.
 
 Load as a `module`:
 
@@ -49,7 +49,7 @@ Load as a `module`:
 
 See Home Assistant documentation for [adding custom cards](https://developers.home-assistant.io/docs/frontend/custom-ui/custom-card) and [registering JavaScript resources](https://developers.home-assistant.io/docs/frontend/custom-ui/registering-resources).
 
-> **Draco decoder path** (optional) — if the bundled decoder path can't be reached from the browser for some reason, set `draco_decoder_path:` on the card config to a URL you host yourself; leave it empty to use the bundled `./draco/` sitting next to the card bundle.
+> **Draco decoder path** (optional) — the card resolves the decoder from its own folder by default (`new URL('./', import.meta.url)`), so the three decoder files just need to sit next to `hass-3d-floorplan.js`. If that URL can't be reached for some reason, set `draco_decoder_path:` on the card config to a URL you host yourself.
 
 ## Model Design and Installation
 
@@ -124,7 +124,7 @@ The GLB file is self-contained so you only need that one file to load the model.
 | overlay\_<style> | string | various      | customize overlay panel appearance (colors, fonts, etc.)                                                                                                                   |
 | max_pixel_ratio  | float  | 2            | cap on the device pixel ratio used for rendering. Phones report 3+, which is expensive for little visual gain; lower to 1 or 1.5 for faster rendering on weak devices      |
 | model_cache      | string | 'yes'        | cache the model file on the device for instant repeat loads (needs HTTPS; updates are picked up in the background — see [Mobile performance](#mobile-performance))         |
-| draco_decoder_path | string | see desc   | URL of the Draco decoder for Draco-compressed .glb files. Default: the bundled `./draco/` folder next to the card (resolved from `import.meta.url`), which lands at `/hacsfiles/hass-3d-floorplan/draco/` for HACS installs and `/local/<path>/draco/` for manual installs. Set this to override and host the decoder files elsewhere; leave blank for the bundled default |
+| draco_decoder_path | string | see desc   | URL of the Draco decoder for Draco-compressed .glb files. Default: the card's own folder (resolved from `import.meta.url`), which lands at `/hacsfiles/hass-3d-floorplan/` for HACS installs and `/local/<path>/` for manual installs — the decoder files sit next to `hass-3d-floorplan.js`. Set this to override and host the decoder files elsewhere; leave blank for the bundled default |
 | debug            | string | no           | 'yes' to print verbose loading/lifecycle logs to the browser console. Off by default; warnings and errors are always shown                                                 |
 
 **Note on sky:** When using sky, the sun going above the ceiling can cause strange illumination. Place a transparent slab object (transparent box) on top of your floor named `transparent_slab*` to block sunlight from above. You can also activate the ceiling in SweetHome3D.
@@ -519,7 +519,7 @@ The card supports **Draco** and **meshopt** compressed GLB files, which are typi
   - command line: `npx gltf-pipeline -i home.glb -o home-draco.glb -d`
 - **meshopt**: `npx gltfpack -i home.glb -o home-opt.glb -cc -kn` — **the `-kn` flag is required**, otherwise gltfpack renames objects and your `object_id` bindings break. Verify your bindings still work after packing.
 
-Decompression is fast, and the Draco decoder itself is only loaded when the model actually uses Draco. As of 2.5.0 the decoder files are bundled with the release (in `dist/draco/`, extracted by HACS to `/hacsfiles/hass-3d-floorplan/draco/`, or sitting next to `hass-3d-floorplan.js` for a manual install), so offline and air-gapped setups work out of the box with no `draco_decoder_path` override. Set `draco_decoder_path:` only if you want to host the decoder files somewhere else.
+Decompression is fast, and the Draco decoder itself is only loaded when the model actually uses Draco. As of 2.5.1 the three decoder files are attached as separate assets on the release and HACS downloads them into the card's folder (`/hacsfiles/hass-3d-floorplan/`) right next to `hass-3d-floorplan.js`. The card resolves the decoder from its own folder by default, so offline and air-gapped setups work out of the box with no `draco_decoder_path` override. Set `draco_decoder_path:` only if you want to host the decoder files somewhere else.
 
 ### 2. Model caching (automatic)
 

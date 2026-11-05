@@ -23,28 +23,40 @@ jobs:
         run: |
           npm ci
           npm run rollup
+          ls -la dist/
 
-      - name: Package release zip
-        run: |
-          cd dist
-          zip -r "$GITHUB_WORKSPACE/hass-3d-floorplan.zip" . -x '*.zip'
-          cd ..
-          ls -la hass-3d-floorplan.zip
-
-      - name: Upload zip to release
-        uses: svenstaro/upload-release-action@v2
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: hass-3d-floorplan.zip
-          asset_name: hass-3d-floorplan.zip
-          tag: ${{ github.ref }}
-          overwrite: true
-
-      - name: Upload individual js (backward compat with older HACS clients)
+      - name: Upload hass-3d-floorplan.js
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: dist/hass-3d-floorplan.js
           asset_name: hass-3d-floorplan.js
+          tag: ${{ github.ref }}
+          overwrite: true
+
+      - name: Upload draco_decoder.js
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: dist/draco_decoder.js
+          asset_name: draco_decoder.js
+          tag: ${{ github.ref }}
+          overwrite: true
+
+      - name: Upload draco_decoder.wasm
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: dist/draco_decoder.wasm
+          asset_name: draco_decoder.wasm
+          tag: ${{ github.ref }}
+          overwrite: true
+
+      - name: Upload draco_wasm_wrapper.js
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: dist/draco_wasm_wrapper.js
+          asset_name: draco_wasm_wrapper.js
           tag: ${{ github.ref }}
           overwrite: true

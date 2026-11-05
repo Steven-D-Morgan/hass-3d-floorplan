@@ -43,7 +43,7 @@ export function _defaultDracoDecoderPath(): string {
     const metaUrl = (import.meta as any)?.url as string | undefined;
     if (metaUrl) {
       const clean = metaUrl.split('?')[0].split('#')[0];
-      return new URL('./draco/', clean).toString();
+      return new URL('./', clean).toString();
     }
   } catch (_e) {
     void 0;

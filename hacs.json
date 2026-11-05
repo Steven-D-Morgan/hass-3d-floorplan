@@ -1,6 +1,5 @@
 {
     "name": "HASS 3D Floorplan",
     "render_readme": true,
-    "filename": "hass-3d-floorplan.js",
-    "zip_release": true
+    "filename": "hass-3d-floorplan.js"
 }
